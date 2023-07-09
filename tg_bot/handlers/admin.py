@@ -2,7 +2,7 @@ from aiogram import Bot, F, Router
 from aiogram.filters.command import Command, CommandStart
 from aiogram.types import Message
 
-from bot.filters.admin import IsAdminFilter
+from tg_bot.filters.admin import IsAdminFilter
 
 admin_router = Router()
 admin_router.message.filter(IsAdminFilter())

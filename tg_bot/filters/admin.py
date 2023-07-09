@@ -1,7 +1,7 @@
 from aiogram.filters import BaseFilter
 from aiogram.types import Message
 
-from bot.config_reader import Config
+from tg_bot.config_reader import Config
 
 
 class IsAdminFilter(BaseFilter):

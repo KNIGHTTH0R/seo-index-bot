@@ -1,21 +1,21 @@
-version: '3.7'
+version: '3.3'
+
 services:
-  db:
-    image: postgres:15.2
-    env_file:
-      - ./.env
+  bot:
+    image: "${BOT_IMAGE_NAME}"
+    container_name: "${BOT_CONTAINER_NAME}"
+    stop_signal: SIGINT
+    build:
+      context: .
+    working_dir: "/usr/src/app/${BOT_NAME}"
     volumes:
-      - pgdata:/var/lib/postgresql/data
-    restart: on-failure
-    ports:
-      - "5432:5432"
-    bot:
-      build: .
-      command: sh -c "make migrate && python -m bot"
-      env_file:
-        -./.env
-      restart: always
-      depends_on:
-        -db
-volumes:
-  pgdata:
+      - .:/usr/src/app/${BOT_NAME}
+    command: python3 -m tg_bot
+    restart: always
+    env_file:
+      - ".env"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"

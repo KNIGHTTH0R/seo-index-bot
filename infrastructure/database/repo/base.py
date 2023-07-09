@@ -4,7 +4,7 @@ from sqlalchemy import select, distinct, create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.sql.elements import and_
 
-from bot.config_reader import load_config
+from tg_bot.config_reader import load_config
 from infrastructure.database.models.products import Products
 
 

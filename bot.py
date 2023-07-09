@@ -10,10 +10,10 @@ from aiogram_dialog import setup_dialogs
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-from bot.middlewares import RepoMiddleware
-from config_reader import load_config
-from handlers.admin import admin_router
-from handlers.user import user_router
+from tg_bot.middlewares import RepoMiddleware
+from tg_bot.config_reader import load_config
+from tg_bot.handlers.admin import admin_router
+from tg_bot.handlers.user import user_router
 
 logger = logging.getLogger(__name__)
 log_level = logging.INFO
@@ -25,7 +25,7 @@ async def main():
         level=logging.INFO,
         format=u'%(filename)s:%(lineno)d #%(levelname)-8s [%(asctime)s] - %(name)s - %(message)s',
     )
-    logger.info("Starting bot")
+    logger.info("Starting tg_bot")
     config = load_config("../.env")
     storage = MemoryStorage()
 
@@ -34,7 +34,7 @@ async def main():
 
     bot = Bot(token=config.tg_bot.token, parse_mode=ParseMode.HTML)
     dp = Dispatcher(storage=storage)
-    dp.include_routers(admin_router, user_router) # main_window - aiogram dialog
+    dp.include_routers(admin_router, user_router)  # main_window - aiogram dialog
     setup_dialogs(dp)
 
     dp.update.middleware(RepoMiddleware(session_maker=session_maker))
@@ -47,4 +47,4 @@ if __name__ == '__main__':
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
-        logger.error("Бот был выключен")
+        logger.error("Бот був вимкнений!")
