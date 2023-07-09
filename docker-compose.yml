@@ -10,7 +10,7 @@ services:
     working_dir: "/usr/src/app/${BOT_NAME}"
     volumes:
       - .:/usr/src/app/${BOT_NAME}
-    command: python3 -m tg_bot
+    command: python3 -m bot
     restart: always
     env_file:
       - ".env"
