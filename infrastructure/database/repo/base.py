@@ -1,26 +1,41 @@
 import asyncio
+from typing import Optional
 
-from sqlalchemy import select, distinct, create_engine
+from sqlalchemy import select, distinct, create_engine, exists, Select, func
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.sql.elements import and_
 
+from infrastructure.database.models.transactions import Transaction
+from infrastructure.database.models.users import User
 from tg_bot.config_reader import load_config
-from infrastructure.database.models.products import Products
 
 
 class Repo:
     def __init__(self, session):
         self.session: AsyncSession = session
 
-    def __repr__(self) -> str:
-        params = ", ".join(
-            (
-                f"{attr}={self.__dict__[attr]}"
-                for attr in self.__dict__
-                if not attr.startswith("_")
+    async def check_user(self, tg_id: int, username: Optional[str], full_name: str):
+        statement = insert(User).values(
+            tg_id=tg_id, username=username, full_name=full_name
+        ).returning(
+            User
+        ).on_conflict_do_update(
+            index_elements=[User.tg_id],
+            set_=dict(
+                username=username,
+                full_name=full_name
             )
         )
-        return f"{self.__class__.__name__}({params})"
+
+        result = await self.session.scalars(statement)
+        await self.session.commit()
+        return result.first()
+
+    async def get_balance(self, tg_id):
+        statement = select(func.sum(Transaction.amount_points))
+        result = await self.session.execute(statement)
+        return result.scalar()
 
 
 async def async_main():
@@ -30,6 +45,8 @@ async def async_main():
 
     async with async_session() as session:
         repo = Repo(session)
+
+
 
 
 asyncio.run(async_main())

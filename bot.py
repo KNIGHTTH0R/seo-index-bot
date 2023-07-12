@@ -14,6 +14,7 @@ from tg_bot.middlewares import RepoMiddleware
 from tg_bot.config_reader import load_config
 from tg_bot.handlers.admin import admin_router
 from tg_bot.handlers.user import user_router
+from tg_bot.dialogs.dialog import main_user_menu_window, bot_menu_dialogs
 
 logger = logging.getLogger(__name__)
 log_level = logging.INFO
@@ -34,7 +35,7 @@ async def main():
 
     bot = Bot(token=config.tg_bot.token, parse_mode=ParseMode.HTML)
     dp = Dispatcher(storage=storage)
-    dp.include_routers(admin_router, user_router)  # main_window - aiogram dialog
+    dp.include_routers(admin_router, user_router, await bot_menu_dialogs())  # main_window - aiogram dialog
     setup_dialogs(dp)
 
     dp.update.middleware(RepoMiddleware(session_maker=session_maker))

@@ -10,11 +10,24 @@ from aiogram_dialog import StartMode, DialogManager
 from aiogram import Bot
 from pathlib import Path
 
+from infrastructure.database.repo.base import Repo
+from tg_bot.dialogs.states import BotMenu
+from tg_bot.middlewares.repo import CheckUser
+
 user_router = Router()
+user_router.message.middleware(CheckUser())
 
 
 @user_router.message(CommandStart())
-async def get_photo_id(message: Message):
-    await message.answer("Вітаю")
+async def user_start(message: Message, dialog_manager: DialogManager, repo: Repo, bot: Bot):
+    await message.answer(
+        "Вас вітає телеграм бот, який допоможе  з індексацією URL-адрес в Google.\nГоловне меню за командою: /menu")
 
 
+@user_router.message(Command("menu"))
+async def show_menu(message: Message, dialog_manager: DialogManager):
+    username = message.from_user.username
+    full_name = message.from_user.full_name
+    user_id = message.from_user.id
+    await dialog_manager.start(BotMenu.user_menu)
+    dialog_manager.dialog_data.update(username=username, full_name=full_name, user_id=user_id)

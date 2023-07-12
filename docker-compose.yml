@@ -43,4 +43,4 @@ services:
 
 
 volumes:
-  pg_data:
+  pgdata: { }

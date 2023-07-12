@@ -36,3 +36,17 @@ class RepoMiddleware(BaseMiddleware):
         async with self.session_maker() as session:
             data["repo"] = Repo(session)
             return await handler(event, data)
+
+
+class CheckUser(BaseMiddleware):
+    async def __call__(
+            self,
+            handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+            event: Message,
+            data: Dict[str, Any],
+    ) -> Any:
+        repo = data["repo"]
+        result = await repo.check_user(tg_id=event.from_user.id, full_name=event.from_user.full_name,
+                                       username=event.from_user.username)
+        data["user_info"] = result
+        return await handler(event, data)
