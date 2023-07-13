@@ -5,14 +5,15 @@ from typing import Any
 from aiogram import F, Router, types
 from aiogram.filters import CommandStart, Command, callback_data
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message, FSInputFile
+from aiogram.types import CallbackQuery, Message, FSInputFile, document
 from aiogram_dialog import StartMode, DialogManager
 from aiogram import Bot
 from pathlib import Path
-
+from aiogram.types import BufferedInputFile
 from infrastructure.database.repo.base import Repo
 from tg_bot.dialogs.states import BotMenu
 from tg_bot.middlewares.repo import CheckUser
+from tg_bot.utils.txtwork import prepare_document
 
 user_router = Router()
 user_router.message.middleware(CheckUser())
