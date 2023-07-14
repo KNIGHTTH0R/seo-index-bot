@@ -15,5 +15,5 @@ class Transaction(Base, TimestampMixin):
     fk_tg_id: Mapped[int] = mapped_column(ForeignKey(User.tg_id))
     amount: Mapped[Optional[float]] = mapped_column(DECIMAL(16, 4), nullable=True)
     amount_points: Mapped[int]
-    currency: Mapped[str] = mapped_column(String(50))
+    currency: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 

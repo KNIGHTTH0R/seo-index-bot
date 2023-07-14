@@ -1,12 +1,13 @@
-from aiogram_dialog import Window
+from aiogram.types import ContentType
+from aiogram_dialog import Window, DialogManager
 from aiogram_dialog.widgets.kbd import Back, Button, Cancel
 from aiogram_dialog.widgets.media import StaticMedia
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.input import MessageInput
-from .keyboards import group_main_menu
+from .keyboards import group_main_menu, order_pend, back_delete_order
 from .states import BotMenu, Order
-from .getters import profile_getter, photo_getter
-from .selected import close_dialog, get_links
+from .getters import profile_getter, count_getter, get_order_id
+from .selected import get_links
 
 
 async def main_user_menu_window():
@@ -39,12 +40,11 @@ async def order_links():
             state=Order.get_url,
         ),
         Window(
-            Const("Вікно"),
-            Format("{count}"),
-            StaticMedia(
-
-            )
-            getter=photo_getter,
+            Const("Підтвердження замовлення"),
+            Format("Кількість посилань: {count}\nДо сплати: {count} монет"),
+            await order_pend(),
+            await back_delete_order(),
+            getter=count_getter,
             state=Order.confirm_url
         )
     ]

@@ -11,9 +11,12 @@ async def profile_getter(repo: Repo, dialog_manager: DialogManager, **kwargs):
         }
 
 
-async def photo_getter(repo: Repo, dialog_manager: DialogManager, **kwargs):
+async def count_getter(dialog_manager: DialogManager, **kwargs):
     return \
         {
-            "photo": dialog_manager.dialog_data.get("photo"),
             "count": dialog_manager.dialog_data.get("count")
         }
+
+
+async def get_order_id(dialog_manager: DialogManager, **kwargs):
+    return {"order_id": dialog_manager.dialog_data.get("order_id")}
