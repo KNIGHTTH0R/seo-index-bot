@@ -9,6 +9,9 @@ async def bot_menu_dialogs():
         ),
         Dialog(
             *await order_links()
+        ),
+        Dialog(
+            await
         )
     ]
 

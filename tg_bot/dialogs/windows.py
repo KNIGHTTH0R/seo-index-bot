@@ -4,7 +4,7 @@ from aiogram_dialog.widgets.kbd import Back, Button, Cancel
 from aiogram_dialog.widgets.media import StaticMedia
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.input import MessageInput
-from .keyboards import group_main_menu, order_pend
+from .keyboards import group_main_menu, order_pend, choose_type_payment
 from .states import BotMenu, Order
 from .getters import profile_getter, count_getter, get_order_id
 from .selected import get_links
@@ -23,6 +23,12 @@ async def main_user_menu_window():
             Back(Const("Назад")),
             getter=profile_getter,
             state=BotMenu.profile
+        ),
+        Window(
+            Const("Поповнення балансу"),
+            await choose_type_payment(),
+            Back(Const("Назад")),
+            state=BotMenu.deposit_balance
         )
     ]
 
@@ -49,9 +55,10 @@ async def order_links():
         )
     ]
 
-async def deposit():
-    return [
-        Window(
-            Const("Поповнення балансу")
-        )
-    ]
+
+async def nowpayments_orders():
+    return Window(
+        Const("Оберіть потрібний метод оплати:"),
+        Cancel(Const("Назад")),
+
+    )

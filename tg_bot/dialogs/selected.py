@@ -23,6 +23,10 @@ async def go_to_order(callback: CallbackQuery, button: Button, dialog_manager: D
     await dialog_manager.start(Order.get_url)
 
 
+async def go_to_deposit_balance(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
+    await dialog_manager.switch_to(BotMenu.deposit_balance)
+
+
 async def get_links(message: Message, MessageInput, dialog_manager: DialogManager, **kwargs):
     bot = dialog_manager.middleware_data["bot"]
     repo = dialog_manager.middleware_data.get("repo")
