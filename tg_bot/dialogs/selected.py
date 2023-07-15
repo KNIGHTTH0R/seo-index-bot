@@ -31,14 +31,12 @@ async def get_links(message: Message, MessageInput, dialog_manager: DialogManage
     bot = dialog_manager.middleware_data["bot"]
     repo = dialog_manager.middleware_data.get("repo")
     user_text = message.text
-    user_id = message.from_user.id
     if message.text:
         list_urls = extract_links(user_text)
         count_extracted_url = len(list_urls)
         str_links = '\n'.join(list_urls)
         if count_extracted_url >= 1:
             dialog_manager.dialog_data.update(count_urls=count_extracted_url,
-                                              tg_id=user_id,
                                               urls=str_links
                                               )
             await dialog_manager.switch_to(Order.confirm_url)
@@ -53,7 +51,6 @@ async def get_links(message: Message, MessageInput, dialog_manager: DialogManage
         str_links = '\n'.join(list_urls)
         if count_extracted_url >= 1:
             dialog_manager.dialog_data.update(count_urls=count_extracted_url,
-                                              tg_id=user_id,
                                               urls=str_links
                                               )
             await dialog_manager.switch_to(Order.confirm_url)
@@ -66,7 +63,7 @@ async def get_links(message: Message, MessageInput, dialog_manager: DialogManage
 async def on_submit_order(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
     repo = dialog_manager.middleware_data.get("repo")
     bot = dialog_manager.middleware_data["bot"]
-    tg_id = dialog_manager.dialog_data.get("tg_id")
+    tg_id = dialog_manager.event.from_user.id
     count_links = dialog_manager.dialog_data.get("count_urls")
     links = dialog_manager.dialog_data.get("urls")
     balance = await repo.get_balance(tg_id=tg_id)
@@ -79,8 +76,7 @@ async def on_submit_order(callback: CallbackQuery, button: Button, dialog_manage
         config = load_config(".env")
         admins = config.tg_bot.admin_ids
         for i in admins:
-            print(i)
             await bot.send_message(chat_id=i,
-                                   text=f"ID замовлення: {order_id}\nКількість посилань: {count_links}\nПосилання:\n{links}",
+                                   text=f"ID замовлення: {order_id}\nID користувача: {dialog_manager.event.from_user.id}\nКількість посилань: {count_links}\nПосилання:\n{links}",
                                    disable_web_page_preview=True,
                                    reply_markup=button_confirm(order_id))

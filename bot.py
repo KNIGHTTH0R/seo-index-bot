@@ -35,7 +35,7 @@ async def main():
 
     bot = Bot(token=config.tg_bot.token, parse_mode=ParseMode.HTML)
     dp = Dispatcher(storage=storage)
-    dp.include_routers(admin_router, user_router, *await bot_menu_dialogs())  # main_window - aiogram dialog
+    dp.include_routers(admin_router, user_router, *bot_menu_dialogs())  # main_window - aiogram dialog
     setup_dialogs(dp)
 
     dp.update.middleware(RepoMiddleware(session_maker=session_maker))

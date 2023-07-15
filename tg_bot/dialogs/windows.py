@@ -10,11 +10,11 @@ from .getters import profile_getter, count_getter, get_order_id
 from .selected import get_links
 
 
-async def main_user_menu_window():
+def main_user_menu_window():
     return [
         Window(
             Const("Головне меню"),
-            await group_main_menu(),
+            group_main_menu(),
             state=BotMenu.user_menu
         ),
         Window(
@@ -26,14 +26,14 @@ async def main_user_menu_window():
         ),
         Window(
             Const("Поповнення балансу"),
-            await choose_type_payment(),
+            choose_type_payment(),
             Back(Const("Назад")),
             state=BotMenu.deposit_balance
         )
     ]
 
 
-async def order_links():
+def order_links():
     return [
         Window(
             Const(
@@ -48,7 +48,7 @@ async def order_links():
         Window(
             Const("Підтвердження замовлення"),
             Format("Кількість посилань: {count}\nДо сплати: {count} монет"),
-            await order_pend(),
+            order_pend(),
             Back(Const("Назад")),
             getter=count_getter,
             state=Order.confirm_url
@@ -56,7 +56,7 @@ async def order_links():
     ]
 
 
-async def nowpayments_orders():
+def nowpayments_orders():
     return Window(
         Const("Оберіть потрібний метод оплати:"),
         Cancel(Const("Назад")),

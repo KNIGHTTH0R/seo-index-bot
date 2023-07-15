@@ -28,20 +28,17 @@ async def user_start(message: Message):
 
 @user_router.message(Command("menu"))
 async def show_menu(message: Message, dialog_manager: DialogManager):
-    username = message.from_user.username
-    full_name = message.from_user.full_name
-    user_id = message.from_user.id
     await dialog_manager.start(BotMenu.user_menu)
-    dialog_manager.dialog_data.update(username=username, full_name=full_name, user_id=user_id)
+
 
 
 @user_router.callback_query(OrderIdFactory.filter())
 async def on_click_submit(callback: types.CallbackQuery, callback_data: OrderIdFactory, repo: Repo, bot: Bot, dialog_manager: DialogManager):
-    order_id = str(callback_data).split("=")[1]
-    response = await repo.get_user_id_order(int(order_id))
+    order_id = callback_data.id_order
+    response = await repo.get_user_id_order(order_id)
     await bot.send_message(chat_id=response[0], text="Посилання індексуються, очікуйте завершення індексації від кількох годин до кількох днів")
     await repo.transaction_minus(tg_id=response[0], amount_points=-response[1])
-    await repo.change_status(order_id=int(order_id), status="submit")
+    await repo.change_status(order_id=order_id, status="submit")
     await callback.answer()
     await callback.message.edit_reply_markup()
 
