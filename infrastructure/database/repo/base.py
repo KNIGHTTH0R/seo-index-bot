@@ -1,7 +1,7 @@
 import asyncio
 from typing import Optional
 
-from sqlalchemy import select, distinct, create_engine, exists, Select, func, delete
+from sqlalchemy import select, distinct, create_engine, exists, Select, func, delete, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.sql.elements import and_
@@ -34,7 +34,7 @@ class Repo:
         return result.first()
 
     async def get_balance(self, tg_id: int) -> int:
-        statement = select(func.sum(Transaction.amount_points))
+        statement = select(func.sum(Transaction.amount_points)).where(Transaction.fk_tg_id == tg_id)
         result = await self.session.execute(statement)
         return result.scalar()
 
@@ -48,12 +48,6 @@ class Repo:
         result = await self.session.scalars(statement)
         await self.session.commit()
         return result.first()
-
-    async def cancel_order(self, order_id):
-        statement = delete(Order).where(Order.order_id == order_id)
-        result = await self.session.execute(statement)
-        await self.session.commit()
-        return result
 
     async def get_order_info(self, order_id: int):
         statement = Select(
@@ -75,6 +69,11 @@ class Repo:
             amount_points=amount_points
         )
         result = await self.session.scalars(statement)
+        await self.session.commit()
+
+    async def change_status(self, status: str, order_id: int):
+        statement = update(Order).values(status=status).where(Order.order_id == order_id)
+        result = await self.session.execute(statement)
         await self.session.commit()
 
 

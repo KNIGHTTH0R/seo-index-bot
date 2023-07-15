@@ -1,0 +1,2 @@
+class APINotAvailable(Exception):
+    pass

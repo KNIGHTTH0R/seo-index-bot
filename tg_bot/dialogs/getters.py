@@ -14,7 +14,7 @@ async def profile_getter(repo: Repo, dialog_manager: DialogManager, **kwargs):
 async def count_getter(dialog_manager: DialogManager, **kwargs):
     return \
         {
-            "count": dialog_manager.dialog_data.get("count")
+            "count": dialog_manager.dialog_data.get("count_urls")
         }
 
 

@@ -1,6 +1,6 @@
 from aiogram_dialog.widgets.kbd import Group, Button
 from aiogram_dialog.widgets.text import Const
-from .selected import to_profile, go_to_order, on_submit_order, on_click_back_delete
+from .selected import to_profile, go_to_order, on_submit_order
 
 
 async def group_main_menu():
@@ -20,9 +20,4 @@ async def order_pend():
     )
 
 
-async def back_delete_order():
-    return Button(
-        Const("Назад"),
-        id="delete",
-        on_click=on_click_back_delete
-    )
+

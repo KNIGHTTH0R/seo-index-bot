@@ -41,6 +41,7 @@ async def on_click_submit(callback: types.CallbackQuery, callback_data: OrderIdF
     response = await repo.get_user_id_order(int(order_id))
     await bot.send_message(chat_id=response[0], text="Посилання індексуються, очікуйте завершення індексації від кількох годин до кількох днів")
     await repo.transaction_minus(tg_id=response[0], amount_points=-response[1])
+    await repo.change_status(order_id=int(order_id), status="submit")
     await callback.answer()
     await callback.message.edit_reply_markup()
 
