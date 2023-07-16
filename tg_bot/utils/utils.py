@@ -1,11 +1,13 @@
-import io
+
 import re
 import hashlib
 import hmac
 
+
 from aiogram import types
 from aiogram.filters.callback_data import CallbackData
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+
 
 
 def extract_links(links):  # func to check valid urls
@@ -29,3 +31,5 @@ def button_confirm(id_order):
 
 def generate_signature(merchant_key, data_str):
     return hmac.new(merchant_key.encode(), data_str.encode(), hashlib.md5).hexdigest()
+
+

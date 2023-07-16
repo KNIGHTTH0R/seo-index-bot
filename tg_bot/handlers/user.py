@@ -15,14 +15,19 @@ from tg_bot.dialogs.states import BotMenu
 from tg_bot.middlewares.repo import CheckUser
 from tg_bot.utils.utils import OrderIdFactory
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tg_bot.locales.stub import TranslatorRunner
+
 user_router = Router()
 user_router.message.middleware(CheckUser())
 
 
 @user_router.message(CommandStart())
-async def user_start(message: Message):
+async def user_start(message: Message, i18n: "TranslatorRunner"):
     await message.answer(
-        "Вас вітає телеграм бот, який допоможе  з індексацією URL-адрес в Google.\nГоловне меню за командою: /menu"
+        i18n.hello()
     )
 
 
@@ -31,15 +36,14 @@ async def show_menu(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(BotMenu.user_menu)
 
 
-
 @user_router.callback_query(OrderIdFactory.filter())
-async def on_click_submit(callback: types.CallbackQuery, callback_data: OrderIdFactory, repo: Repo, bot: Bot, dialog_manager: DialogManager):
+async def on_click_submit(callback: types.CallbackQuery, callback_data: OrderIdFactory, repo: Repo, bot: Bot,
+                          dialog_manager: DialogManager, i18n: "TranslatorRunner"):
     order_id = callback_data.id_order
     response = await repo.get_user_id_order(order_id)
-    await bot.send_message(chat_id=response[0], text="Посилання індексуються, очікуйте завершення індексації від кількох годин до кількох днів")
+    await bot.send_message(chat_id=response[0],
+                           text=i18n.message_when_confirm_admin())
     await repo.transaction_minus(tg_id=response[0], amount_points=-response[1])
     await repo.change_status(order_id=order_id, status="submit")
     await callback.answer()
     await callback.message.edit_reply_markup()
-
-

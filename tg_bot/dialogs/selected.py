@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from aiogram import Bot
 from aiogram.types import CallbackQuery, Message, BufferedInputFile
@@ -7,6 +7,8 @@ from aiogram_dialog import DialogManager, ShowMode
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Button
 from environs import Env
+if TYPE_CHECKING:
+    from tg_bot.locales.stub import TranslatorRunner
 
 from .states import BotMenu
 from .states import Order
@@ -27,7 +29,7 @@ async def go_to_deposit_balance(callback: CallbackQuery, button: Button, dialog_
     await dialog_manager.switch_to(BotMenu.deposit_balance)
 
 
-async def get_links(message: Message, MessageInput, dialog_manager: DialogManager, **kwargs):
+async def get_links(message: Message, MessageInput, dialog_manager: DialogManager, i18n: "TranslatorRunner",  **kwargs):
     bot = dialog_manager.middleware_data["bot"]
     repo = dialog_manager.middleware_data.get("repo")
     user_text = message.text
@@ -41,7 +43,7 @@ async def get_links(message: Message, MessageInput, dialog_manager: DialogManage
                                               )
             await dialog_manager.switch_to(Order.confirm_url)
         else:
-            await message.answer("Кількість посилань не може бути меньше 1")
+            await message.answer(i18n.zero_links())
     elif message.document:
         content = BytesIO()
         document = await bot.download(message.document, content)
@@ -55,12 +57,12 @@ async def get_links(message: Message, MessageInput, dialog_manager: DialogManage
                                               )
             await dialog_manager.switch_to(Order.confirm_url)
         else:
-            await message.answer("Кількість посилань не може бути меньше 1")
+            await message.answer(i18n.zero_links())
     else:
-        await message.answer("Невідомий тип документу")
+        await message.answer(i18n.undefined_type_document())
 
 
-async def on_submit_order(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
+async def on_submit_order(callback: CallbackQuery, button: Button, dialog_manager: DialogManager, i18n: "TranslatorRunner" ):
     repo = dialog_manager.middleware_data.get("repo")
     bot = dialog_manager.middleware_data["bot"]
     tg_id = dialog_manager.event.from_user.id
@@ -68,9 +70,9 @@ async def on_submit_order(callback: CallbackQuery, button: Button, dialog_manage
     links = dialog_manager.dialog_data.get("urls")
     balance = await repo.get_balance(tg_id=tg_id)
     if balance < count_links:
-        await callback.answer("Недостатньо монет на рахунку. Будь ласка, поповніть баланс", show_alert=True)
+        await callback.answer(i18n.not_enough_balance(), show_alert=True)
     else:
-        await callback.message.answer("Ваше замовлення перевіряється адміністатором, очікуйте повідомлення від бота.")
+        await callback.message.answer(i18n.on_cofrim())
         order_id = await repo.add_order(count_urls=count_links, fk_tg_id=tg_id, urls=links,
                                         status="pending")
         config = load_config(".env")

@@ -9,7 +9,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram_dialog import setup_dialogs
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-
+from tg_bot.middlewares.translator import TranslationMiddleware
 from tg_bot.middlewares.repo import RepoMiddleware
 from tg_bot.config_reader import load_config
 from tg_bot.handlers.admin import admin_router
@@ -39,6 +39,7 @@ async def main():
     setup_dialogs(dp)
 
     dp.update.middleware(RepoMiddleware(session_maker=session_maker))
+    dp.update.middleware(TranslationMiddleware())
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot, config=config)
