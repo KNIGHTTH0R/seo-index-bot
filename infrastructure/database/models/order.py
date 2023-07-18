@@ -1,5 +1,4 @@
-from typing import Optional
-from sqlalchemy import String, Integer, ForeignKey, Text
+from sqlalchemy import Integer, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from infrastructure.database.models import User

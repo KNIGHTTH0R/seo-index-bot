@@ -1,16 +1,13 @@
 import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy import pool, URL
+from alembic import context
+from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from infrastructure.database.models import Base
-from infrastructure.database.models.transactions import Transaction
-from alembic import context
-
 from tg_bot.config_reader import load_config
-
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -21,10 +18,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-
 env_config = load_config(".env")
 url = env_config.db.construct_sqlalchemy_url()
-
 
 config.set_main_option(
     "sqlalchemy.url",

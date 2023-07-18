@@ -40,3 +40,5 @@ button_order = Заказ
 button_profile = Мой профиль
 button_deposit = Пополнение баланса
 button_settings = Настройка
+
+message_order_not_found = Заказ не найден

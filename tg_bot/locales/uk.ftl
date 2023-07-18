@@ -4,10 +4,13 @@ hello =
 
 
 main_menu_name = Головне меню
+
+# TODO Look how variables are passed and make changes
 profile =
     Ваш профіль:
-    Username: $username
-    Баланс: $balance
+    Username: { $username }
+    Баланс: { $balance } монет
+
 back_button = Назад
 
 order =
@@ -19,8 +22,6 @@ order =
 
 confirm_order =
     Підтвердження замовлення
-    Кількість посилань: $
-    До сплати: $
 
 
 on_cofrim = Ваше замовлення перевіряється адміністратором, очікуйте повідомлення від бота.
@@ -44,3 +45,10 @@ button_order = Замовлення
 button_profile = Мій профіль
 button_deposit = Поповнення балансу
 button_settings = Налаштування
+
+message_order_not_found = Замовлення не знайдено
+
+# TODO: look how preformating text works. Then you use i18n.text().format(count=count)
+pre_confirm_text = Кількість посилань: {{count}}\nДо сплати: {{count}} монет
+
+language_changed = Мова змінена на українську

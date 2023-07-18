@@ -4,7 +4,6 @@ from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.orm import Mapped, mapped_column
 
-from infrastructure.database.models.base import Base
 from .tablenamemixin import TableNameMixin
 
 

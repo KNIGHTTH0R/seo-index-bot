@@ -1,68 +1,78 @@
-from aiogram.types import ContentType
+from typing import TYPE_CHECKING
+
 from aiogram.utils import i18n
-from aiogram_dialog import Window, DialogManager, StartMode
-from aiogram_dialog.widgets.kbd import Back, Button, Cancel, Start
-from aiogram_dialog.widgets.media import StaticMedia
-from aiogram_dialog.widgets.text import Const, Format
+from aiogram_dialog import Window
 from aiogram_dialog.widgets.input import MessageInput
+from aiogram_dialog.widgets.kbd import Back, Cancel
+from aiogram_dialog.widgets.text import Format
 
 from . import selected
+from .getters import profile_getter, get_order_text, get_lang_setting
 from .keyboards import group_main_menu, order_pend, choose_type_payment
-from .states import BotMenu, Order
-from .getters import profile_getter, count_getter, get_order_id
 from .selected import get_links
-from ..utils.translation_utils import dropdown_on_off_menu, Option, TranslatableFormat
+from .states import BotMenu, Order, LanguageMenu
+from ..utils.widgets import (
+    Translation,
+    TranslatableFormat,
+    dropdown_on_off_menu,
+    Option,
+)
+
+if TYPE_CHECKING:
+    from tg_bot.locales.stub import TranslatorRunner
+
+i18n: "TranslatorRunner" = Translation()
 
 
 def main_user_menu_window():
     return [
         Window(
-            Const("Головне меню"),
+            TranslatableFormat(i18n.main_menu_name()),
             group_main_menu(),
-            state=BotMenu.user_menu
+            state=BotMenu.user_menu,
         ),
         Window(
-            Const("Ваш профіль:"),
-            Format("Username: {username}\nБаланс: {balance}"),
-            Back(Const("Назад")),
+            TranslatableFormat(i18n.button_profile()),
+            # TODO Format("Username: {username}\nБаланс: {balance}"), (look at order_links func)
+            Format("{profile-text}"),
+            Back(TranslatableFormat(i18n.back_button())),
             getter=profile_getter,
-            state=BotMenu.profile
+            state=BotMenu.profile,
         ),
         Window(
-            Const("Поповнення балансу"),
+            TranslatableFormat(i18n.button_deposit()),
             choose_type_payment(),
-            Back(Const("Назад")),
-            state=BotMenu.deposit_balance
-        )
+            Back(TranslatableFormat(i18n.back_button())),
+            state=BotMenu.deposit_balance,
+        ),
     ]
 
 
 def order_links():
     return [
         Window(
-            Const(
-                "Для того, Щоб Вам замовити індексацію, потрібно відправити URL-адреси в форматі txt файлу або повідомленням.\nПриклад: \nhttps://soundcloud.com\nhttps://www.youtube.com\n1 url = 1 монета"),
-            Cancel(Const("Назад")),
-            MessageInput(
-                func=get_links
-            ),
+            TranslatableFormat(i18n.order()),
+            Cancel(TranslatableFormat(i18n.back_button())),
+            MessageInput(func=get_links),
             disable_web_page_preview=True,
             state=Order.get_url,
         ),
         Window(
-            Const("Підтвердження замовлення"),
-            Format("Кількість посилань: {count}\nДо сплати: {count} монет"),
+            TranslatableFormat(i18n.confirm_order()),
+            # TODO LOOK HERE: Format("Кількість посилань: {count}\nДо сплати: {count} монет"),
+            Format("{pre-confirm-text}"),
             order_pend(),
-            Back(Const("Назад")),
-            getter=count_getter,
-            state=Order.confirm_url
-        )
+            Back(TranslatableFormat(i18n.back_button())),
+            getter=get_order_text,
+            state=Order.confirm_url,
+        ),
     ]
 
 
 def language_menu_window():
     return Window(
         *dropdown_on_off_menu(
+            # TODO Add these translations to FTL
             dropdown_title=i18n.dialogs.buttons.change_language(),
             selection_key="change_language",
             options=[
@@ -85,14 +95,14 @@ def language_menu_window():
             on_click=selected.set_language(switch_to=LanguageMenu.menu),
             on_open_close=selected.open_close_menu(switch_to=LanguageMenu.menu),
         ),
-        Start(
-            TranslatableFormat(i18n.dialogs.buttons.back()),
-            id="back_to_main_menu",
-            state=MainMenu.menu,
-            mode=StartMode.RESET_STACK,
-        ),
-        Cancel(TranslatableFormat(i18n.dialogs.buttons.exit()), result={"exit": True}),
+        # TODO Make this work in the correct dialog
+        # Start(
+        #     TranslatableFormat(i18n.dialogs.buttons.back_to_main_menu()),
+        #     id="back_to_main_menu",
+        #     state=MainMenu.menu,
+        #     mode=StartMode.RESET_STACK,
+        # ),
+        Cancel(TranslatableFormat(i18n.back_button())),
         state=LanguageMenu.menu,
-        getter=(getters.get_settings, getters.get_lang_setting),
-        parse_mode=ParseMode.HTML,
+        getter=get_lang_setting,
     )

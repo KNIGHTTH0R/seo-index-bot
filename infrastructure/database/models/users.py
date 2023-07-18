@@ -1,8 +1,6 @@
-from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import String, Integer, func
-from sqlalchemy.dialects.postgresql import TIMESTAMP
+from sqlalchemy import String, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
 from infrastructure.database.models.base import Base

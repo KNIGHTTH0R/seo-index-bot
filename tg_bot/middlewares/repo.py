@@ -1,10 +1,8 @@
-from typing import Any, Awaitable, Callable, Dict
+from typing import Callable, Dict, Any, Awaitable
 
 from aiogram import BaseMiddleware
-from aiogram.types import TelegramObject
-from sqlalchemy.ext.asyncio import async_sessionmaker
-from typing import Callable, Dict, Any, Awaitable
 from aiogram.types import Message, TelegramObject
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from infrastructure.database.repo.base import Repo
 
@@ -14,12 +12,12 @@ class ConfigMiddleware(BaseMiddleware):
         self.config = config
 
     async def __call__(
-            self,
-            handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
-            event: Message,
-            data: Dict[str, Any]
+        self,
+        handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+        event: Message,
+        data: Dict[str, Any],
     ) -> Any:
-        data['config'] = self.config
+        data["config"] = self.config
         return await handler(event, data)
 
 
@@ -28,10 +26,10 @@ class RepoMiddleware(BaseMiddleware):
         self.session_maker = session_maker
 
     async def __call__(
-            self,
-            handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
-            event: TelegramObject,
-            data: Dict[str, Any],
+        self,
+        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
+        data: Dict[str, Any],
     ) -> Any:
         async with self.session_maker() as session:
             data["repo"] = Repo(session)
@@ -40,13 +38,16 @@ class RepoMiddleware(BaseMiddleware):
 
 class CheckUser(BaseMiddleware):
     async def __call__(
-            self,
-            handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
-            event: Message,
-            data: Dict[str, Any],
+        self,
+        handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+        event: Message,
+        data: Dict[str, Any],
     ) -> Any:
         repo = data["repo"]
-        result = await repo.check_user(tg_id=event.from_user.id, full_name=event.from_user.full_name,
-                                       username=event.from_user.username)
+        result = await repo.check_user(
+            tg_id=event.from_user.id,
+            full_name=event.from_user.full_name,
+            username=event.from_user.username,
+        )
         data["user_info"] = result
         return await handler(event, data)

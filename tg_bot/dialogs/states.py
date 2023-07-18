@@ -18,3 +18,7 @@ class WayForPay(StatesGroup):
 
 class NowPayment(StatesGroup):
     available_methods = State()
+
+
+class LanguageMenu(StatesGroup):
+    menu = State()

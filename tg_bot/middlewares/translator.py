@@ -5,6 +5,7 @@ from aiogram.types import Message
 from fluent_compiler.bundle import FluentBundle
 from fluentogram import TranslatorHub, FluentTranslator
 from fluentogram import TranslatorRunner
+
 from infrastructure.database.models.users import User
 
 
@@ -12,7 +13,7 @@ class TranslationMiddleware(BaseMiddleware):
     def __init__(self) -> None:
         self.t_hub = TranslatorHub(
             {
-                'uk': ('uk', 'ru'),
+                "uk": ("uk", "ru"),
                 "ru": ("ru",),
             },
             translators=[
@@ -26,7 +27,7 @@ class TranslationMiddleware(BaseMiddleware):
                     separator="-",
                 )
                 for language_code in (
-                    'uk',
+                    "uk",
                     "ru",
                 )
             ],
@@ -34,14 +35,16 @@ class TranslationMiddleware(BaseMiddleware):
         )
 
     async def __call__(
-            self,
-            handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
-            event: Message,
-            data: Dict[str, Any],
+        self,
+        handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+        event: Message,
+        data: Dict[str, Any],
     ) -> Any:
         user: User = data.get("user")
 
-        translator_runner: TranslatorRunner = self.t_hub.get_translator_by_locale(User.language)
+        translator_runner: TranslatorRunner = self.t_hub.get_translator_by_locale(
+            User.language
+        )
 
         data["i18n"] = translator_runner
         data["th"] = self.t_hub

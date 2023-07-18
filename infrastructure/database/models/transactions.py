@@ -1,8 +1,8 @@
 from typing import Optional
 
-from sqlalchemy.types import DECIMAL
 from sqlalchemy import String, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.types import DECIMAL
 
 from infrastructure.database.models import User
 from infrastructure.database.models.base import Base
@@ -16,4 +16,3 @@ class Transaction(Base, TimestampMixin):
     amount: Mapped[Optional[float]] = mapped_column(DECIMAL(16, 4), nullable=True)
     amount_points: Mapped[int]
     currency: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-
