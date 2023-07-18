@@ -87,7 +87,7 @@ def dropdown_on_off_menu(
     on_open_close: Callable,
     always_open: bool = False,
 ):
-    i18n: "TranslatorRunner" = Translation()
+    i18n: "TranslatorRunner" | Translation = Translation()
     window_parts = []
     if not always_open:
         window_parts.append(

@@ -21,7 +21,7 @@ from ..utils.widgets import (
 if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
 
-i18n: "TranslatorRunner" = Translation()
+i18n: "TranslatorRunner" | Translation = Translation()
 
 
 def main_user_menu_window():
