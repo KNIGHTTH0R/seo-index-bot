@@ -28,7 +28,7 @@ def main_user_menu_window():
     return [
         Window(
             TranslatableFormat(i18n.main_menu_name()),
-            group_main_menu(),
+            group_main_menu(i18n),
             state=BotMenu.user_menu,
         ),
         Window(
@@ -41,7 +41,7 @@ def main_user_menu_window():
         ),
         Window(
             TranslatableFormat(i18n.button_deposit()),
-            choose_type_payment(),
+            choose_type_payment(i18n),
             Back(TranslatableFormat(i18n.back_button())),
             state=BotMenu.deposit_balance,
         ),
@@ -61,7 +61,7 @@ def order_links():
             TranslatableFormat(i18n.confirm_order()),
             # TODO LOOK HERE: Format("Кількість посилань: {count}\nДо сплати: {count} монет"),
             Format("{pre-confirm-text}"),
-            order_pend(),
+            order_pend(i18n),
             Back(TranslatableFormat(i18n.back_button())),
             getter=get_order_text,
             state=Order.confirm_url,
