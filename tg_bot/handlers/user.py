@@ -8,14 +8,12 @@ from aiogram_dialog import DialogManager
 
 from infrastructure.database.repo.base import Repo
 from tg_bot.dialogs.states import BotMenu
-from tg_bot.middlewares.repo import CheckUser
 from tg_bot.utils.utils import OrderIdFactory
 
 if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
 
 user_router = Router()
-user_router.message.middleware(CheckUser())
 
 
 @user_router.message(CommandStart())
