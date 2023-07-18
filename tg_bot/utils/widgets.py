@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, Literal
 from typing import Dict
 
 from aiogram_dialog import DialogManager
@@ -75,12 +75,12 @@ class TranslatableFormat(Text):
 @dataclass
 class Option:
     id: str
-    text: "TranslatorRunner"
+    text: Union["TranslatorRunner", Literal]
     when_key: str
 
 
 def dropdown_on_off_menu(
-    dropdown_title: "TranslatorRunner",
+    dropdown_title: Union["TranslatorRunner", Translation],
     selection_key: str,
     options: list[Option],
     on_click: Callable,

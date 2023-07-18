@@ -36,7 +36,7 @@ def main_user_menu_window():
             Back(TranslatableFormat(i18n.back_button())),
             getter=profile_getter,
             state=BotMenu.profile,
-        )
+        ),
     ]
 
 
@@ -67,13 +67,8 @@ def language_menu_window():
             selection_key="change_language",
             options=[
                 Option(
-                    id="set_lang_en",
-                    text=i18n.dialogs.buttons.english(),
-                    when_key="lang_en",
-                ),
-                Option(
                     id="set_lang_uk",
-                    text=i18n.dialogs.buttons.ukrainian(),
+                    text=i18n.dialogs.buttons.ukranian(),
                     when_key="lang_uk",
                 ),
                 Option(
@@ -85,13 +80,6 @@ def language_menu_window():
             on_click=selected.set_language(switch_to=LanguageMenu.menu),
             on_open_close=selected.open_close_menu(switch_to=LanguageMenu.menu),
         ),
-        # TODO Make this work in the correct dialog
-        # Start(
-        #     TranslatableFormat(i18n.dialogs.buttons.back_to_main_menu()),
-        #     id="back_to_main_menu",
-        #     state=MainMenu.menu,
-        #     mode=StartMode.RESET_STACK,
-        # ),
         Cancel(TranslatableFormat(i18n.back_button())),
         state=LanguageMenu.menu,
         getter=get_lang_setting,
@@ -99,16 +87,17 @@ def language_menu_window():
 
 
 def deposit():
-    return [Window(
-        TranslatableFormat(i18n.button_deposit()),
-        choose_type_payment(i18n),
-        Back(TranslatableFormat(i18n.back_button())),
-        state=Payment.avaliable_method,
-    ),
+    return [
+        Window(
+            TranslatableFormat(i18n.button_deposit()),
+            choose_type_payment(i18n),
+            Back(TranslatableFormat(i18n.back_button())),
+            state=Payment.available_method,
+        ),
         Window(
             TranslatableFormat(i18n.suma_to_deposit()),
             Cancel(TranslatableFormat(i18n.back_button())),
             MessageInput(func=get_suma_to_deposit),
-            state=Payment.suma_of_payment
-        )
+            state=Payment.suma_of_payment,
+        ),
     ]

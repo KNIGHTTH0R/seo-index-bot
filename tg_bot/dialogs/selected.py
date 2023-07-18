@@ -32,7 +32,7 @@ async def go_to_order(
 async def go_to_deposit_balance(
         callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
-    await dialog_manager.start(Payment.avaliable_method)
+    await dialog_manager.start(Payment.available_method)
 
 
 async def get_links(

@@ -12,9 +12,8 @@ class Order(StatesGroup):
 
 
 class Payment(StatesGroup):
-    avaliable_method = State()
+    available_method = State()
     suma_of_payment = State()
-
 
 
 class WayForPay(StatesGroup):
