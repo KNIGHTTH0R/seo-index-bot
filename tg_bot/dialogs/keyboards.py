@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from aiogram_dialog.widgets.kbd import Group, Button
 from aiogram_dialog.widgets.text import Const
 
-from .selected import to_profile, go_to_order, on_submit_order, go_to_deposit_balance, go_to_settings
+from .selected import to_profile, go_to_order, on_submit_order, go_to_deposit_balance, go_to_settings, go_to_payment
 from ..utils.widgets import TranslatableFormat
 
 if TYPE_CHECKING:
@@ -27,6 +27,6 @@ def order_pend(i18n: "TranslatorRunner"):
 
 def choose_type_payment(i18n: "TranslatorRunner"):
     return Group(
-        Button(TranslatableFormat(i18n.money_hrn()), id="wayforpay"),
-        Button(TranslatableFormat(i18n.money_crypto()), id="nowpayments"),
+        Button(TranslatableFormat(i18n.money_hrn()), id="wayforpay", on_click=go_to_payment),
+        Button(TranslatableFormat(i18n.money_crypto()), id="nowpayments", on_click=go_to_payment),
     )

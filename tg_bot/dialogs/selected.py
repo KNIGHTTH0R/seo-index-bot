@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
 
 from .states import BotMenu, LanguageMenu
-from .states import Order
+from .states import Order, Payment
 from ..config_reader import load_config
 from ..utils.utils import button_confirm, extract_links
 
@@ -138,3 +138,18 @@ def open_close_menu(switch_to: State):
 
 async def go_to_settings(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
     await dialog_manager.start(LanguageMenu.menu)
+
+
+async def go_to_payment(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
+    dialog_manager.dialog_data.update(payment=button.widget_id)
+    print(dialog_manager.dialog_data.get("payment"))
+    await dialog_manager.start(Payment.suma_of_payment)
+
+
+async def get_suma_to_deposit(
+        message: Message,
+        MessageInput,
+        dialog_manager: DialogManager,
+        **kwargs,
+):
+    dialog_manager.dialog_data.update(suma=message.text)

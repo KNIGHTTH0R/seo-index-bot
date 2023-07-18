@@ -43,6 +43,8 @@ button_profile = Мой профиль
 button_deposit = Пополнение баланса
 button_settings = Настройка
 
+suma_to_deposit = Введите вашу сумму к пополнению:
+
 pre_confirm_text =
     Количество ссылок: { $count }
     К оплате: { $count } монет

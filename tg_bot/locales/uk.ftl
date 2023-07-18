@@ -52,6 +52,8 @@ button_settings = Налаштування
 
 message_order_not_found = Замовлення не знайдено
 
+suma_to_deposit = Введіть вашу суму для поповнення:
+
 pre_confirm_text = Кількість посилань: { $count }\nДо сплати: { $count } монет
 
 language_changed = Мова змінена на українську

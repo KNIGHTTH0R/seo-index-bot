@@ -9,8 +9,8 @@ from aiogram_dialog.widgets.text import Format
 from . import selected
 from .getters import profile_getter, get_order_text, get_lang_setting
 from .keyboards import group_main_menu, order_pend, choose_type_payment
-from .selected import get_links
-from .states import BotMenu, Order, LanguageMenu
+from .selected import get_links, get_suma_to_deposit
+from .states import BotMenu, Order, LanguageMenu, Payment
 from ..utils.widgets import (
     Translation,
     TranslatableFormat,
@@ -42,7 +42,7 @@ def main_user_menu_window():
             choose_type_payment(i18n),
             Back(TranslatableFormat(i18n.back_button())),
             state=BotMenu.deposit_balance,
-        ),
+        )
     ]
 
 
@@ -101,4 +101,13 @@ def language_menu_window():
         Cancel(TranslatableFormat(i18n.back_button())),
         state=LanguageMenu.menu,
         getter=get_lang_setting,
+    )
+
+
+def deposit():
+    return Window(
+        TranslatableFormat(i18n.suma_to_deposit()),
+        Cancel(TranslatableFormat(i18n.back_button())),
+        MessageInput(func=get_suma_to_deposit),
+        state=Payment.suma_of_payment
     )

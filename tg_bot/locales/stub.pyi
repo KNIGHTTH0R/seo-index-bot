@@ -4,6 +4,8 @@ from typing import Literal
 class TranslatorRunner:
     def get(self, path: str, **kwargs) -> str: ...
     
+    dialogs: Dialogs
+
     @staticmethod
     def hello() -> Literal["""Вас вітає телеграм бот, який допоможе  з індексацією URL-адрес в Google.
 Головне меню за командою: /menu"""]: ...
@@ -76,9 +78,26 @@ https://www.youtube.com"""]: ...
     @staticmethod
     def message_order_not_found() -> Literal["""Замовлення не знайдено"""]: ...
 
+
+
+    @staticmethod
+    def suma_to_deposit() -> Literal["""Введіть вашу суму для поповнення:"""]: ...
+
     @staticmethod
     def pre_confirm_text(*, count) -> Literal["""Кількість посилань: { $count }\nДо сплати: { $count } монет"""]: ...
 
     @staticmethod
     def language_changed() -> Literal["""Мова змінена на українську"""]: ...
+
+
+class Dialogs:
+    buttons: DialogsButtons
+
+
+class DialogsButtons:
+    @staticmethod
+    def ukranian() -> Literal["""Українська"""]: ...
+
+    @staticmethod
+    def russian() -> Literal["""Русский"""]: ...
 

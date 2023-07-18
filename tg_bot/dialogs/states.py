@@ -12,6 +12,11 @@ class Order(StatesGroup):
     confirm_url = State()
 
 
+class Payment(StatesGroup):
+    suma_of_payment = State()
+
+
+
 class WayForPay(StatesGroup):
     pass
 
