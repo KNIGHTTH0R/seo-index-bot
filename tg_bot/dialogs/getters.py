@@ -30,7 +30,7 @@ async def get_order_text(
     # Format("Кількість посилань: {count}\nДо сплати: {count} монет"),
     count = dialog_manager.dialog_data.get("count_urls")
 
-    return {"pre-confirm-text": i18n.pre_confirm_text().format(count=count)}
+    return {"pre-confirm-text": i18n.pre_confirm_text(count=count)}
 
 
 async def get_lang_setting(dialog_manager: DialogManager, **middleware_data):

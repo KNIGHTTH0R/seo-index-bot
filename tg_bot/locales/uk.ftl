@@ -48,7 +48,6 @@ button_settings = Налаштування
 
 message_order_not_found = Замовлення не знайдено
 
-# TODO: look how preformating text works. Then you use i18n.text().format(count=count)
-pre_confirm_text = Кількість посилань: {{count}}\nДо сплати: {{count}} монет
+pre_confirm_text = Кількість посилань: { $count }\nДо сплати: { $count } монет
 
 language_changed = Мова змінена на українську
