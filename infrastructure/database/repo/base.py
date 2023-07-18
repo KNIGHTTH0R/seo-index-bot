@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional
 
 from sqlalchemy import select, func, update, Row
@@ -68,11 +69,20 @@ class Repo:
         )
         await self.session.scalars(statement)
 
-    async def change_status(self, status: str, order_id: int):
+    async def change_language(self, tg_id: int, language: str) -> None:
+        statement = (
+            update(User).values(language=language).where(User.tg_id == tg_id)
+        )
+        await self.session.execute(statement)
+        await self.session.commit()
+
+    async def change_status(self, status: str, order_id: int) -> None:
         statement = (
             update(Order).values(status=status).where(Order.order_id == order_id)
         )
         await self.session.execute(statement)
+        await self.session.commit()
+
 
 
 async def async_main():
@@ -82,4 +92,7 @@ async def async_main():
 
     async with async_session() as session:
         repo = Repo(session)
-        await repo.get_user_id_order(2)
+        await repo.change_language(124792, "ua")
+
+
+asyncio.run(async_main())

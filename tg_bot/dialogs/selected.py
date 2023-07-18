@@ -11,38 +11,38 @@ from infrastructure.database.repo.base import Repo
 if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
 
-from .states import BotMenu
+from .states import BotMenu, LanguageMenu
 from .states import Order
 from ..config_reader import load_config
 from ..utils.utils import button_confirm, extract_links
 
 
 async def to_profile(
-    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.switch_to(BotMenu.profile)
 
 
 async def go_to_order(
-    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.start(Order.get_url)
 
 
 async def go_to_deposit_balance(
-    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.switch_to(BotMenu.deposit_balance)
 
 
 async def get_links(
-    message: Message,
-    MessageInput,
-    dialog_manager: DialogManager,
-    i18n: "TranslatorRunner",
-    **kwargs,
+        message: Message,
+        MessageInput,
+        dialog_manager: DialogManager,
+        **kwargs,
 ):
     bot = dialog_manager.middleware_data["bot"]
+    i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
     repo = dialog_manager.middleware_data.get("repo")
     user_text = message.text
     if message.text:
@@ -75,11 +75,11 @@ async def get_links(
 
 
 async def on_submit_order(
-    callback: CallbackQuery,
-    button: Button,
-    dialog_manager: DialogManager,
-    i18n: "TranslatorRunner",
+        callback: CallbackQuery,
+        button: Button,
+        dialog_manager: DialogManager,
 ):
+    i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
     repo = dialog_manager.middleware_data.get("repo")
     bot = dialog_manager.middleware_data["bot"]
     tg_id = dialog_manager.event.from_user.id
@@ -98,7 +98,6 @@ async def on_submit_order(
         for i in admins:
             await bot.send_message(
                 chat_id=i,
-                # TODO use i18n and .format()
                 text=f"ID замовлення: {order_id}\nID користувача: {dialog_manager.event.from_user.id}\nКількість посилань: {count_links}\nПосилання:\n{links}",
                 disable_web_page_preview=True,
                 reply_markup=button_confirm(order_id),
@@ -110,8 +109,7 @@ def set_language(switch_to: State):
         repo: Repo = manager.middleware_data.get("repo")
         user = manager.middleware_data.get("user")
         language = widget.widget_id.split("_")[-1]
-        # TODO: add update_user method to repo
-        await repo.update_user(c.from_user.id, language=language)
+        await repo.change_language(c.from_user.id, language=language)
         await manager.switch_to(switch_to)
 
         t_hub = manager.middleware_data.get("th")
@@ -136,3 +134,7 @@ def open_close_menu(switch_to: State):
         await manager.switch_to(switch_to)
 
     return wrapper
+
+
+async def go_to_settings(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
+    await dialog_manager.start(LanguageMenu.menu)

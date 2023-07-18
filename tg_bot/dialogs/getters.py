@@ -9,10 +9,11 @@ if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
 
 
-async def profile_getter(repo: Repo, dialog_manager: DialogManager, **kwargs):
+async def profile_getter(repo: Repo, dialog_manager: DialogManager, i18n: "TranslatorRunner", **kwargs):
+    balance = await repo.get_balance(dialog_manager.event.from_user.id)
+    username = dialog_manager.event.from_user.username
     return {
-        "balance": await repo.get_balance(int(dialog_manager.event.from_user.id)),
-        "username": dialog_manager.event.from_user.username,
+        "profile-text": i18n.profile(username=username, balance=balance),
     }
 
 
@@ -27,9 +28,7 @@ async def get_order_id(dialog_manager: DialogManager, **kwargs):
 async def get_order_text(
     dialog_manager: DialogManager, i18n: "TranslatorRunner", **kwargs
 ):
-    # Format("Кількість посилань: {count}\nДо сплати: {count} монет"),
     count = dialog_manager.dialog_data.get("count_urls")
-
     return {"pre-confirm-text": i18n.pre_confirm_text(count=count)}
 
 

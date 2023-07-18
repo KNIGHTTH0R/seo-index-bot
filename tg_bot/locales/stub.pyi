@@ -13,7 +13,7 @@ class TranslatorRunner:
 
     @staticmethod
     def profile(*, username, balance) -> Literal["""Ваш профіль:
-Username: { $username }
+Ім&#39;я: { $username }
 Баланс: { $balance } монет"""]: ...
 
     @staticmethod
@@ -30,12 +30,21 @@ https://www.youtube.com
     def confirm_order() -> Literal["""Підтвердження замовлення"""]: ...
 
     @staticmethod
+    def confirm_button() -> Literal["""Підтвердити"""]: ...
+
+    @staticmethod
+    def money_hrn() -> Literal["""Гривні"""]: ...
+
+    @staticmethod
+    def money_crypto() -> Literal["""Кріптовалюта"""]: ...
+
+    @staticmethod
     def on_cofrim() -> Literal["""Ваше замовлення перевіряється адміністратором, очікуйте повідомлення від бота."""]: ...
 
     @staticmethod
-    def confrirm_by_user() -> Literal["""ID замовлення: $order_id
-ID користувача: $id
-Кількість посилань: $count_links
+    def confrirm_by_user(*, order_id, id, count_links) -> Literal["""ID замовлення: { $order_id }
+ID користувача: { $id }
+Кількість посилань: { $count_links }
 Посилання:
 https://soundcloud.com
 https://www.youtube.com"""]: ...
@@ -68,7 +77,7 @@ https://www.youtube.com"""]: ...
     def message_order_not_found() -> Literal["""Замовлення не знайдено"""]: ...
 
     @staticmethod
-    def pre_confirm_text(*, count, count) -> Literal["""Кількість посилань: { $count }\nДо сплати: { $count } монет"""]: ...
+    def pre_confirm_text(*, count) -> Literal["""Кількість посилань: { $count }\nДо сплати: { $count } монет"""]: ...
 
     @staticmethod
     def language_changed() -> Literal["""Мова змінена на українську"""]: ...

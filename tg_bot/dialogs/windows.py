@@ -32,8 +32,6 @@ def main_user_menu_window():
             state=BotMenu.user_menu,
         ),
         Window(
-            TranslatableFormat(i18n.button_profile()),
-            # TODO Format("Username: {username}\nБаланс: {balance}"), (look at order_links func)
             Format("{profile-text}"),
             Back(TranslatableFormat(i18n.back_button())),
             getter=profile_getter,
@@ -59,7 +57,6 @@ def order_links():
         ),
         Window(
             TranslatableFormat(i18n.confirm_order()),
-            # TODO LOOK HERE: Format("Кількість посилань: {count}\nДо сплати: {count} монет"),
             Format("{pre-confirm-text}"),
             order_pend(i18n),
             Back(TranslatableFormat(i18n.back_button())),
@@ -72,7 +69,6 @@ def order_links():
 def language_menu_window():
     return Window(
         *dropdown_on_off_menu(
-            # TODO Add these translations to FTL
             dropdown_title=i18n.dialogs.buttons.change_language(),
             selection_key="change_language",
             options=[

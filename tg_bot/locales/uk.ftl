@@ -5,10 +5,10 @@ hello =
 
 main_menu_name = Головне меню
 
-# TODO Look how variables are passed and make changes
+
 profile =
     Ваш профіль:
-    Username: { $username }
+    Ім'я: { $username }
     Баланс: { $balance } монет
 
 back_button = Назад
@@ -23,12 +23,16 @@ order =
 confirm_order =
     Підтвердження замовлення
 
+confirm_button = Підтвердити
+
+money_hrn = Гривні
+money_crypto = Кріптовалюта
 
 on_cofrim = Ваше замовлення перевіряється адміністратором, очікуйте повідомлення від бота.
 confrirm_by_user =
-    ID замовлення: $order_id
-    ID користувача: $id
-    Кількість посилань: $count_links
+    ID замовлення: {$order_id}
+    ID користувача: {$id}
+    Кількість посилань: {$count_links}
     Посилання:
     https://soundcloud.com
     https://www.youtube.com
@@ -51,3 +55,6 @@ message_order_not_found = Замовлення не знайдено
 pre_confirm_text = Кількість посилань: { $count }\nДо сплати: { $count } монет
 
 language_changed = Мова змінена на українську
+
+dialogs-buttons-ukranian = Українська
+dialogs-buttons-russian = Русский
