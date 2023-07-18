@@ -21,6 +21,7 @@ class OrderIdFactory(CallbackData, prefix="order_id"):
 
 def button_confirm(id_order):
     builder = InlineKeyboardBuilder()
+    # TODO add i18n translation
     builder.add(
         types.InlineKeyboardButton(
             text="В процесі", callback_data=OrderIdFactory(id_order=id_order).pack()
