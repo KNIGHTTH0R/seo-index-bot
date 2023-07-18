@@ -4,7 +4,6 @@ from aiogram.fsm.state import StatesGroup, State
 class BotMenu(StatesGroup):
     user_menu = State()
     profile = State()
-    deposit_balance = State()
 
 
 class Order(StatesGroup):
@@ -13,6 +12,7 @@ class Order(StatesGroup):
 
 
 class Payment(StatesGroup):
+    avaliable_method = State()
     suma_of_payment = State()
 
 

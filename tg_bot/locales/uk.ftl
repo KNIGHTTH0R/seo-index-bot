@@ -41,6 +41,10 @@ message_when_confirm_admin = Посилання індексуються, очі
 
 not_enough_balance = Недостатньо монет на рахунку. Будь ласка, поповніть баланс
 
+on_confirm_sum =
+    Сума до сплати: {$suma}
+    Посилання на оплату: {$link}
+
 zero_links = Кількість посилань не може бути меньше 1
 
 undefined_type_document = Невідомий тип документу

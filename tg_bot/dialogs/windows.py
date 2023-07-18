@@ -36,12 +36,6 @@ def main_user_menu_window():
             Back(TranslatableFormat(i18n.back_button())),
             getter=profile_getter,
             state=BotMenu.profile,
-        ),
-        Window(
-            TranslatableFormat(i18n.button_deposit()),
-            choose_type_payment(i18n),
-            Back(TranslatableFormat(i18n.back_button())),
-            state=BotMenu.deposit_balance,
         )
     ]
 
@@ -105,9 +99,16 @@ def language_menu_window():
 
 
 def deposit():
-    return Window(
-        TranslatableFormat(i18n.suma_to_deposit()),
-        Cancel(TranslatableFormat(i18n.back_button())),
-        MessageInput(func=get_suma_to_deposit),
-        state=Payment.suma_of_payment
-    )
+    return [Window(
+        TranslatableFormat(i18n.button_deposit()),
+        choose_type_payment(i18n),
+        Back(TranslatableFormat(i18n.back_button())),
+        state=Payment.avaliable_method,
+    ),
+        Window(
+            TranslatableFormat(i18n.suma_to_deposit()),
+            Cancel(TranslatableFormat(i18n.back_button())),
+            MessageInput(func=get_suma_to_deposit),
+            state=Payment.suma_of_payment
+        )
+    ]

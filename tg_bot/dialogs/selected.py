@@ -32,7 +32,7 @@ async def go_to_order(
 async def go_to_deposit_balance(
         callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
-    await dialog_manager.switch_to(BotMenu.deposit_balance)
+    await dialog_manager.start(Payment.avaliable_method)
 
 
 async def get_links(
@@ -141,9 +141,9 @@ async def go_to_settings(callback: CallbackQuery, button: Button, dialog_manager
 
 
 async def go_to_payment(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
+
     dialog_manager.dialog_data.update(payment=button.widget_id)
-    print(dialog_manager.dialog_data.get("payment"))
-    await dialog_manager.start(Payment.suma_of_payment)
+    await dialog_manager.switch_to(Payment.suma_of_payment)
 
 
 async def get_suma_to_deposit(
@@ -153,3 +153,11 @@ async def get_suma_to_deposit(
         **kwargs,
 ):
     dialog_manager.dialog_data.update(suma=message.text)
+    i18n = dialog_manager.middleware_data.get("i18n")
+    payment_order = dialog_manager.dialog_data.get("payment")
+    suma = message.text
+    if payment_order == "wayforpay":
+        await message.answer(i18n.on_confirm_sum(suma=suma, link="text"))
+
+    if payment_order == "nowpayments":
+        pass

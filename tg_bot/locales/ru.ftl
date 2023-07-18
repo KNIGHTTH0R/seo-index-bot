@@ -8,6 +8,11 @@ profile =
     Имя: {$username}
     Баланс: {$balance}
 
+
+on_confirm_sum =
+    Сума к оплате: {$suma}
+    Ссылка на оплату: {$link}
+
 back_button = Назад
 
 order =
