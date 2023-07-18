@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from aiogram.utils import i18n
 from aiogram_dialog import Window
@@ -21,7 +21,7 @@ from ..utils.widgets import (
 if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
 
-i18n: "TranslatorRunner" | Translation = Translation()
+i18n: Union["TranslatorRunner", Translation] = Translation()
 
 
 def main_user_menu_window():

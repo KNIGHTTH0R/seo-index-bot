@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 from typing import Dict
 
 from aiogram_dialog import DialogManager
@@ -87,7 +87,8 @@ def dropdown_on_off_menu(
     on_open_close: Callable,
     always_open: bool = False,
 ):
-    i18n: "TranslatorRunner" | Translation = Translation()
+    i18n: Union["TranslatorRunner", Translation] = Translation()
+
     window_parts = []
     if not always_open:
         window_parts.append(
