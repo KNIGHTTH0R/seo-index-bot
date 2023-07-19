@@ -1,14 +1,12 @@
-import asyncio
 from typing import Optional
 
 from sqlalchemy import select, func, update, Row
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from infrastructure.database.models.order import Order
 from infrastructure.database.models.transactions import Transaction
 from infrastructure.database.models.users import User
-from tg_bot.config_reader import load_config
 
 
 class Repo:
@@ -63,16 +61,31 @@ class Repo:
         result = await self.session.execute(statement)
         return result.fetchone()
 
-    async def transaction_minus(self, tg_id: int, amount_points: int) -> None:
+    # async def transaction_minus(self, tg_id: int, amount_points: int) -> None:
+    #     statement = insert(Transaction).values(
+    #         fk_tg_id=tg_id, amount_points=amount_points
+    #     )
+    #     await self.session.scalars(statement)
+    async def create_tx(
+        self,
+        order_id: str,
+        tg_id: int,
+        amount_points: int,
+        amount: int = None,
+        currency: str = None,
+    ) -> None:
         statement = insert(Transaction).values(
-            fk_tg_id=tg_id, amount_points=amount_points
+            order_id=order_id,
+            fk_tg_id=tg_id,
+            amount_points=amount_points,
+            amount=amount,
+            currency=currency,
         )
-        await self.session.scalars(statement)
+        await self.session.execute(statement)
+        await self.session.commit()
 
     async def change_language(self, tg_id: int, language: str) -> None:
-        statement = (
-            update(User).values(language=language).where(User.tg_id == tg_id)
-        )
+        statement = update(User).values(language=language).where(User.tg_id == tg_id)
         await self.session.execute(statement)
         await self.session.commit()
 
@@ -82,17 +95,3 @@ class Repo:
         )
         await self.session.execute(statement)
         await self.session.commit()
-
-
-
-async def async_main():
-    config = load_config(".env")
-    engine = create_async_engine(config.db.construct_sqlalchemy_url(), echo=True)
-    async_session = async_sessionmaker(engine)
-
-    async with async_session() as session:
-        repo = Repo(session)
-        await repo.change_language(124792, "ua")
-
-
-asyncio.run(async_main())

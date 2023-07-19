@@ -42,9 +42,25 @@ class Miscellaneous:
 
 
 @dataclass
+class WayforpayConfig:
+    merchant_account: str
+    merchant_secret_key: str
+    merchant_domain: str
+    webhook_url: Optional[str] = None
+
+
+@dataclass
+class NowPaymentsConfig:
+    api_key: str
+    callback_url: Optional[str] = None
+
+
+@dataclass
 class Config:
     tg_bot: TgBot
-    db: DbConfig = Optional[str]
+    db: DbConfig = None
+    wayforpay: WayforpayConfig = None
+    nowpayments: NowPaymentsConfig = None
 
 
 def load_config(path: Optional[str]):
@@ -62,5 +78,15 @@ def load_config(path: Optional[str]):
             password=env.str("POSTGRES_PASSWORD"),
             user=env.str("POSTGRES_USER"),
             database=env.str("POSTGRES_DB"),
+        ),
+        wayforpay=WayforpayConfig(
+            merchant_account=env.str("MERCHANT_ACCOUNT"),
+            merchant_secret_key=env.str("MERCHANT_SECRET_KEY"),
+            merchant_domain=env.str("MERCHANT_DOMAIN"),
+            webhook_url=env.str("WEBHOOK_URL"),
+        ),
+        nowpayments=NowPaymentsConfig(
+            api_key=env.str("NOWPAYMENTS_API_KEY"),
+            callback_url=env.str("NOWPAYMENTS_CALLBACK_URL"),
         ),
     )

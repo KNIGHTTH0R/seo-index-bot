@@ -1,45 +1,58 @@
+import datetime
+import hashlib
+import math
 from io import BytesIO
 from typing import TYPE_CHECKING, Any
 
+from aiogram import enums
 from aiogram.fsm.state import State
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import (
+    CallbackQuery,
+    Message,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+)
+from aiogram.utils.markdown import hbold
 from aiogram_dialog import DialogManager
+from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Button
 
 from infrastructure.database.repo.base import Repo
+from infrastructure.nowpayments.api import NowPaymentsAPI
+from infrastructure.wayforpay.api import WayForPayAPI
 
 if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
 
 from .states import BotMenu, LanguageMenu
 from .states import Order, Payment
-from ..config_reader import load_config
+from ..config_reader import load_config, Config
 from ..utils.utils import button_confirm, extract_links
 
 
 async def to_profile(
-        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.switch_to(BotMenu.profile)
 
 
 async def go_to_order(
-        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.start(Order.get_url)
 
 
 async def go_to_deposit_balance(
-        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.start(Payment.available_method)
 
 
 async def get_links(
-        message: Message,
-        MessageInput,
-        dialog_manager: DialogManager,
-        **kwargs,
+    message: Message,
+    MessageInput,
+    dialog_manager: DialogManager,
+    **kwargs,
 ):
     bot = dialog_manager.middleware_data["bot"]
     i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
@@ -75,9 +88,9 @@ async def get_links(
 
 
 async def on_submit_order(
-        callback: CallbackQuery,
-        button: Button,
-        dialog_manager: DialogManager,
+    callback: CallbackQuery,
+    button: Button,
+    dialog_manager: DialogManager,
 ):
     i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
     repo = dialog_manager.middleware_data.get("repo")
@@ -136,28 +149,139 @@ def open_close_menu(switch_to: State):
     return wrapper
 
 
-async def go_to_settings(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
+async def go_to_settings(
+    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+):
     await dialog_manager.start(LanguageMenu.menu)
 
 
-async def go_to_payment(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
-
-    dialog_manager.dialog_data.update(payment=button.widget_id)
-    await dialog_manager.switch_to(Payment.suma_of_payment)
-
-
-async def get_suma_to_deposit(
-        message: Message,
-        MessageInput,
-        dialog_manager: DialogManager,
-        **kwargs,
+async def get_deposit_amount(
+    message: Message,
+    widget: MessageInput,
+    dialog_manager: DialogManager,
 ):
-    dialog_manager.dialog_data.update(suma=message.text)
-    i18n = dialog_manager.middleware_data.get("i18n")
-    payment_order = dialog_manager.dialog_data.get("payment")
-    suma = message.text
-    if payment_order == "wayforpay":
-        await message.answer(i18n.on_confirm_sum(suma=suma, link="text"))
+    i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
+    if not message.text.isdigit():
+        await message.answer(i18n.not_digit())
+        return
 
-    if payment_order == "nowpayments":
-        pass
+    dialog_manager.dialog_data.update(total_coins=message.text)
+
+
+def create_order_information(callback, dialog_manager: DialogManager):
+    total_coins = int(dialog_manager.dialog_data.get("total_coins"))
+    total_amount_usd = int(math.ceil(total_coins / 20))
+
+    order_time = datetime.datetime.now().timestamp()
+    order_date = int(order_time)
+    order_id = (
+        f"{callback.from_user.id}-{total_coins}-"
+        + hashlib.sha1(str(order_date).encode()).hexdigest()
+    )
+
+    return total_coins, total_amount_usd, order_id, order_date
+
+
+async def pay_wayforpay(
+    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+):
+    i18n: "TranslatorRunner" = dialog_manager.middleware_data.get("i18n")
+    repo: Repo = dialog_manager.middleware_data.get("repo")
+
+    total_coins, total_amount_usd, order_id, order_date = create_order_information(
+        callback, dialog_manager
+    )
+    wayforpay: WayForPayAPI = dialog_manager.middleware_data.get("wayforpay")
+
+    invoice = await wayforpay.create_invoice(
+        product_name=f"Поповнення балансу на суму {total_amount_usd} грн.",
+        product_price=total_amount_usd,
+        product_count=1,
+        currency="USD",
+        order_date=order_date,
+        first_name=callback.from_user.first_name,
+        last_name=callback.from_user.last_name,
+        order_reference=order_id,
+    )
+
+    await repo.create_tx(
+        order_id,
+        callback.from_user.id,
+        amount=total_amount_usd,
+        currency="USD",
+        amount_points=total_coins,
+    )
+    await callback.message.edit_text(
+        i18n.pay_message(
+            usd_amount=hbold(str(total_amount_usd)),
+            coins=hbold(str(total_coins)),
+            link=invoice.invoiceUrl,
+        ),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text=i18n.pay_button(), url=invoice.invoiceUrl)],
+            ]
+        ),
+        parse_mode=enums.ParseMode.HTML,
+    )
+
+
+async def generate_crypto_payment(
+    config: Config,
+    nowpayments: NowPaymentsAPI,
+    total_amount_usd: int,
+    order_id: str,
+):
+    payment = await nowpayments.get_estimated_price(
+        "usd", amount=total_amount_usd
+    )  # replace with your currency
+
+    payment = await nowpayments.create_payment(
+        price_amount=total_amount_usd,
+        price_currency="usd",
+        pay_currency="usd",
+        order_id=order_id,  # replace with your currency
+        ipn_callback_url=f"{config.nowpayments.callback_url}",
+        pay_amount=payment.estimated_amount,
+    )
+    return payment
+
+
+async def pay_nowpayments(
+    callback: CallbackQuery,
+    button: Button,
+    dialog_manager: DialogManager,
+):
+    i18n: "TranslatorRunner" = dialog_manager.middleware_data.get("i18n")
+    repo: Repo = dialog_manager.middleware_data.get("repo")
+    nowpayments: NowPaymentsAPI = dialog_manager.middleware_data.get("nowpayments")
+    config: Config = dialog_manager.middleware_data.get("config")
+
+    total_coins, total_amount_usd, order_id, order_date = create_order_information(
+        callback, dialog_manager
+    )
+
+    tx_id = await repo.create_tx(
+        order_id,
+        callback.from_user.id,
+        amount=total_amount_usd,
+        currency="USD",
+        amount_points=total_coins,
+    )
+
+    payment = await generate_crypto_payment(
+        config, nowpayments, total_amount_usd, order_id
+    )
+    #     await callback_query.message.answer(
+    #         f'Please send not less than <b>{payment.pay_amount:.6f} {currency.upper()}</b> to the address below. '
+    #         f'You will be notified when the payment is received.\n\n'
+    #         f'🔎 Address: <code>{payment.pay_address}</code>\n'
+    #         f'💰 Amount: <code>{payment.pay_amount:.6f}</code>\n\n'
+    #     )
+    await callback.message.edit_text(
+        i18n.pay_message_crypto(
+            pay_amount=hbold(str(payment.pay_amount)),
+            pay_address=hbold(str(payment.pay_address)),
+            pay_currency=hbold(str(payment.pay_currency)),
+        ),
+    )

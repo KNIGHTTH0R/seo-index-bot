@@ -8,6 +8,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram_dialog import setup_dialogs
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
+from infrastructure.nowpayments.api import NowPaymentsAPI
+from infrastructure.wayforpay.api import WayForPayAPI
 from tg_bot.config_reader import load_config
 from tg_bot.dialogs.dialog import bot_menu_dialogs
 from tg_bot.handlers.user import user_router
@@ -33,15 +35,25 @@ async def main():
 
     bot = Bot(token=config.tg_bot.token, parse_mode=ParseMode.HTML)
     dp = Dispatcher(storage=storage)
+    wayforpay = WayForPayAPI(
+        config.wayforpay.merchant_account,
+        config.wayforpay.merchant_secret_key,
+        config.wayforpay.merchant_domain,
+        config.wayforpay.webhook_url,
+    )
+    nowpayments = NowPaymentsAPI(config.nowpayments.api_key)
 
     for global_middleware in (
-        RepoMiddleware(session_maker=session_maker),
-        TranslationMiddleware(),
-        CheckUser()
-
+            RepoMiddleware(session_maker=session_maker),
+            TranslationMiddleware(),
+            CheckUser(),
     ):
         dp.message.outer_middleware(global_middleware)
         dp.callback_query.outer_middleware(global_middleware)
+    dp.workflow_data.update(
+        wayforpay=wayforpay,
+        nowpayments=nowpayments,
+    )
 
     dp.include_routers(user_router, *bot_menu_dialogs())  # main_window - aiogram dialog
     setup_dialogs(dp)

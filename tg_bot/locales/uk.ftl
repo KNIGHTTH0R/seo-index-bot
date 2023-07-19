@@ -56,11 +56,24 @@ button_settings = Налаштування
 
 message_order_not_found = Замовлення не знайдено
 
-suma_to_deposit = Введіть вашу суму для поповнення:
+suma_to_deposit = Введіть скільки монет ви хочете поповнити. 1 монета = $0.05
 
-pre_confirm_text = Кількість посилань: { $count }\nДо сплати: { $count } монет
+pre_confirm_text =
+    Кількість посилань: { $count }
+    До сплати: { $count } монет
 
 language_changed = Мова змінена на українську
 
 dialogs-buttons-ukranian = Українська
 dialogs-buttons-russian = Русский
+
+
+pay_message =
+    Сума до сплати: ${ $usd_amount }
+    Кількість отриманих монет: 1 монета = $0.05
+    Всього монет до зачислення: { $coins }
+    Посилання на оплату: { $link }
+
+pay_button = Оплатити
+
+not_digit = Ви ввели не число! Спробуйте ще раз

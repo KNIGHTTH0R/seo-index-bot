@@ -3,13 +3,21 @@ from typing import TYPE_CHECKING, Union
 from aiogram.utils import i18n
 from aiogram_dialog import Window
 from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.kbd import Back, Cancel
+from aiogram_dialog.widgets.kbd import Back, Cancel, Group, Button, SwitchTo
 from aiogram_dialog.widgets.text import Format
 
 from . import selected
 from .getters import profile_getter, get_order_text, get_lang_setting
-from .keyboards import group_main_menu, order_pend, choose_type_payment
-from .selected import get_links, get_suma_to_deposit
+from .selected import (
+    get_links,
+    pay_wayforpay,
+    to_profile,
+    go_to_order,
+    go_to_deposit_balance,
+    go_to_settings,
+    on_submit_order,
+    go_to_payment, get_deposit_amount,
+)
 from .states import BotMenu, Order, LanguageMenu, Payment
 from ..utils.widgets import (
     Translation,
@@ -28,7 +36,28 @@ def main_user_menu_window():
     return [
         Window(
             TranslatableFormat(i18n.main_menu_name()),
-            group_main_menu(i18n),
+            Group(
+                Button(
+                    TranslatableFormat(i18n.button_profile()),
+                    id="profile",
+                    on_click=to_profile,
+                ),
+                Button(
+                    TranslatableFormat(i18n.button_order()),
+                    id="order",
+                    on_click=go_to_order,
+                ),
+                Button(
+                    TranslatableFormat(i18n.button_deposit()),
+                    id="deposit",
+                    on_click=go_to_deposit_balance,
+                ),
+                Button(
+                    TranslatableFormat(i18n.button_settings()),
+                    id="settings",
+                    on_click=go_to_settings,
+                ),
+            ),
             state=BotMenu.user_menu,
         ),
         Window(
@@ -52,7 +81,11 @@ def order_links():
         Window(
             TranslatableFormat(i18n.confirm_order()),
             Format("{pre-confirm-text}"),
-            order_pend(i18n),
+            Button(
+                TranslatableFormat(i18n.confirm_button()),
+                id="pending",
+                on_click=on_submit_order,
+            ),
             Back(TranslatableFormat(i18n.back_button())),
             getter=get_order_text,
             state=Order.confirm_url,
@@ -89,15 +122,33 @@ def language_menu_window():
 def deposit():
     return [
         Window(
-            TranslatableFormat(i18n.button_deposit()),
-            choose_type_payment(i18n),
+            TranslatableFormat(i18n.enter_deposit_amount()),
+            Cancel(TranslatableFormat(i18n.back_button())),
+            MessageInput(func=get_deposit_amount),
+            state=Payment.deposit_amount,
+        ),
+        Window(
+            TranslatableFormat(i18n.choose_payment_method()),
+            Group(
+                Button(
+                    TranslatableFormat(i18n.wayforpay()),
+                    id="wayforpay",
+                    on_click=pay_wayforpay,
+                ),
+                SwitchTo(
+                    TranslatableFormat(i18n.nowpayments()),
+                    id="nowpayments",
+                    state=Payment.choose_crypto_currency,
+                ),
+            ),
             Back(TranslatableFormat(i18n.back_button())),
             state=Payment.available_method,
         ),
         Window(
-            TranslatableFormat(i18n.suma_to_deposit()),
-            Cancel(TranslatableFormat(i18n.back_button())),
-            MessageInput(func=get_suma_to_deposit),
-            state=Payment.suma_of_payment,
+            TranslatableFormat(i18n.choose_crypto_currency()),
+            # Make choose currency
+            Group(),
+            Back(TranslatableFormat(i18n.back_button())),
+            state=Payment.choose_crypto_currency,
         ),
     ]

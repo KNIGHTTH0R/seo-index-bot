@@ -48,7 +48,7 @@ button_profile = Мой профиль
 button_deposit = Пополнение баланса
 button_settings = Настройка
 
-suma_to_deposit = Введите вашу сумму к пополнению:
+suma_to_deposit = Введите сколько монет вы хотите пополнить. 1 монета = $0.05
 
 pre_confirm_text =
     Количество ссылок: { $count }
@@ -58,3 +58,13 @@ message_order_not_found = Заказ не найден
 
 dialogs-buttons-ukranian = Українська
 dialogs-buttons-russian = Русский
+
+pay_message =
+    Сумма к оплате: ${ $usd_amount }
+    Количество полученных монет: 1 монета = $0.05
+    Всего монет к зачислению: { $coins }
+    Ссылка на оплату: { $link }
+
+pay_button = Оплатить
+
+not_digits = Вы ввели не число! Попробуйте еще раз

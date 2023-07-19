@@ -12,16 +12,9 @@ class Order(StatesGroup):
 
 
 class Payment(StatesGroup):
+    deposit_amount = State()
     available_method = State()
-    suma_of_payment = State()
-
-
-class WayForPay(StatesGroup):
-    pass
-
-
-class NowPayment(StatesGroup):
-    available_methods = State()
+    choose_crypto_currency = State()
 
 
 class LanguageMenu(StatesGroup):

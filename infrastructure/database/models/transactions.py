@@ -12,6 +12,7 @@ class Transaction(Base, TimestampMixin):
     __tablename__ = "transactions"
     transaction_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     fk_tg_id: Mapped[int] = mapped_column(ForeignKey("users.tg_id"))
+    order_id: Mapped[str] = mapped_column(String(128))
     amount: Mapped[Optional[float]] = mapped_column(DECIMAL(16, 4), nullable=True)
     amount_points: Mapped[int]
     currency: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
