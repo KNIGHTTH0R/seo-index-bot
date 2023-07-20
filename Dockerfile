@@ -1,6 +1,6 @@
 FROM python:3.10
 # get BOT_NAME from .env !
-ENV BOT_NAME=mybotname
+ENV BOT_NAME=bot
 
 WORKDIR /usr/src/app/${BOT_NAME}
 

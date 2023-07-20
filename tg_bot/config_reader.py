@@ -53,6 +53,49 @@ class WayforpayConfig:
 class NowPaymentsConfig:
     api_key: str
     callback_url: Optional[str] = None
+    ipn_secret: Optional[str] = None
+
+
+@dataclass
+class RedisConfig:
+    """
+    Redis configuration class.
+
+    Attributes
+    ----------
+    redis_pass : Optional(str)
+        The password used to authenticate with Redis.
+    redis_port : Optional(int)
+        The port where Redis server is listening.
+    redis_host : Optional(str)
+        The host where Redis server is located.
+    """
+
+    redis_pass: Optional[str]
+    redis_port: Optional[int]
+    redis_host: Optional[str]
+
+    def dsn(self) -> str:
+        """
+        Constructs and returns a Redis DSN (Data Source Name) for this database configuration.
+        """
+        if self.redis_pass:
+            return f"redis://:{self.redis_pass}@{self.redis_host}:{self.redis_port}/0"
+        else:
+            return f"redis://{self.redis_host}:{self.redis_port}/0"
+
+    @staticmethod
+    def from_env(env: Env):
+        """
+        Creates the RedisConfig object from environment variables.
+        """
+        redis_pass = env.str("REDIS_PASSWORD")
+        redis_port = env.int("REDIS_PORT")
+        redis_host = env.str("REDIS_HOST")
+
+        return RedisConfig(
+            redis_pass=redis_pass, redis_port=redis_port, redis_host=redis_host
+        )
 
 
 @dataclass
@@ -61,9 +104,10 @@ class Config:
     db: DbConfig = None
     wayforpay: WayforpayConfig = None
     nowpayments: NowPaymentsConfig = None
+    redis: RedisConfig = None
 
 
-def load_config(path: Optional[str]):
+def load_config(path: Optional[str] = None):
     env = Env()
     env.read_env(path)
 
@@ -88,5 +132,8 @@ def load_config(path: Optional[str]):
         nowpayments=NowPaymentsConfig(
             api_key=env.str("NOWPAYMENTS_API_KEY"),
             callback_url=env.str("NOWPAYMENTS_CALLBACK_URL"),
+            ipn_secret=env.str("NOWPAYMENTS_IPN_SECRET"),
         ),
+        redis=RedisConfig.from_env(env) if env.bool("USE_REDIS") else None,
+
     )

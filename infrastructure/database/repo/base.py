@@ -31,7 +31,7 @@ class Repo:
         return result.first()
 
     async def get_balance(self, tg_id: int) -> int:
-        statement = select(func.sum(Transaction.amount_points)).where(
+        statement = select(func.coalesce(func.sum(Transaction.amount_points), 0)).where(
             Transaction.fk_tg_id == tg_id
         )
         result = await self.session.execute(statement)

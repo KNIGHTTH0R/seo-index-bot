@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import aiohttp
 
-from constants import API_URL
 from tg_bot.utils.utils import generate_signature
+from .constants import API_URL
 
 
 @dataclass

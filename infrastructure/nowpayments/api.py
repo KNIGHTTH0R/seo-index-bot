@@ -1,8 +1,5 @@
-import asyncio
 import logging
-from typing import Union
 from urllib.parse import urljoin
-from uuid import uuid4
 
 import aiohttp
 
@@ -17,7 +14,6 @@ from infrastructure.nowpayments.types import (
 
 class NowPaymentsAPI:
     def __init__(self, api_key):
-
         # Set up a request's session for interacting with the API.
         self.session = aiohttp.ClientSession()
         self.api_endpoint = "https://api.nowpayments.io/v1/"
@@ -91,6 +87,7 @@ class NowPaymentsAPI:
         payout_currency: str = None,
         payout_extra_id: str = None,
         fixed_rate: bool = False,
+        is_fee_paid_by_user: bool = True,
     ):
         """
         :param price_amount: (required) - the fiat equivalent of the price to be paid in crypto.
@@ -143,6 +140,8 @@ class NowPaymentsAPI:
             payload["payout_extra_id"] = payout_extra_id
         if fixed_rate:
             payload["fixed_rate"] = fixed_rate
+        if is_fee_paid_by_user:
+            payload["is_fee_paid_by_user"] = is_fee_paid_by_user
         result = await self._post("payment", json=payload)
         return Payment(**result)
 

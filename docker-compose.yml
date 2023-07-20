@@ -19,9 +19,12 @@ services:
       options:
         max-size: "200k"
         max-file: "10"
+    networks:
+      - tg_bot
+
   pg_database:
     container_name: "${PG_CONTAINER_NAME}"
-    image:  postgres:15.2
+    image: postgres:15.2
     ports:
       - "5439:5432"
     restart: always
@@ -40,7 +43,48 @@ services:
       options:
         max-size: "200k"
         max-file: "10"
+    networks:
+      - tg_bot
 
+  webhook:
+    image: "webhook"
+    container_name: "${WEBHOOK_CONTAINER_NAME}"
+    stop_signal: SIGINT
+    build:
+      context: .
+      dockerfile: infrastructure/webhook/Dockerfile
+    working_dir: "/usr/src/app/${WEBHOOK_APP_NAME}"
+    volumes:
+      - .:/usr/src/app/${WEBHOOK_APP_NAME}
+    command: [ "uvicorn", "infrastructure.webhook.app:app", "--host", "0.0.0.0", "--port", "8000" ]
+    restart: always
+    env_file:
+      - ".env"
+    networks:
+      - tg_bot
+    ports:
+      - "8443:8000"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+
+  redis_cache:
+    image: redis:6.2-alpine
+    container_name: "${REDIS_CONTAINER_NAME}"
+    restart: always
+    command: redis-server --port $REDIS_PORT --save 20 1 --loglevel warning --requirepass $REDIS_PASSWORD
+    env_file:
+      - ".env"
+    volumes:
+      - ./cache:/data
+    networks:
+      - tg_bot
 
 volumes:
   pgdata: { }
+
+networks:
+  tg_bot:
+    driver: bridge

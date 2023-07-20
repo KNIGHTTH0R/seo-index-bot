@@ -1,7 +1,8 @@
 # create validation classes with pydantic
 
-from typing import List, Optional
-from pydantic import BaseModel, Field
+from typing import Optional, Any
+
+from pydantic import BaseModel
 
 
 class MinAmount(BaseModel):
@@ -49,7 +50,7 @@ class Payment(BaseModel):
     smart_contract: Optional[str]
     network: Optional[str]
     network_precision: Optional[int]
-    time_limit: Optional[int]
+    time_limit: Optional[Any]
     burning_percent: Optional[int]
     expiration_estimate_date: Optional[str]
 

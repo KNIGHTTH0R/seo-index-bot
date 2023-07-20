@@ -1,0 +1,1 @@
+i18n -ftl tg_bot/locales/uk.ftl -stub tg_bot/locales/stub.pyi

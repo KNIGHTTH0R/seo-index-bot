@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Callable, Optional, Union, Literal
+from typing import Callable, Optional, Union, Any
 from typing import Dict
 
 from aiogram_dialog import DialogManager
@@ -36,7 +36,7 @@ class OpenClose(Text):
 
 
 class Translation(AttribTracer):
-    def __init__(self, separator: str = "-") -> None:
+    def __init__(self, separator: str = "-"):
         super().__init__()
         self.separator = separator
         self.request_line = ""
@@ -64,6 +64,8 @@ class TranslatableFormat(Text):
         i18n: "TranslatorRunner" = manager.middleware_data.get("i18n")
         try:
             translated = i18n.get(self.key, **data)
+            if not translated:
+                return f"no-translation: {self.key}"
         except Exception as e:
             logging.info(f"Failed to Translate {self.key}")
             return f"no-translation-error: {self.key}"
@@ -75,12 +77,12 @@ class TranslatableFormat(Text):
 @dataclass
 class Option:
     id: str
-    text: Union["TranslatorRunner", Literal]
+    text: str
     when_key: str
 
 
 def dropdown_on_off_menu(
-    dropdown_title: Union["TranslatorRunner", Translation],
+    dropdown_title: str,
     selection_key: str,
     options: list[Option],
     on_click: Callable,

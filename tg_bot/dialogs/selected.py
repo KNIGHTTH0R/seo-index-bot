@@ -12,7 +12,7 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
 )
-from aiogram.utils.markdown import hbold
+from aiogram.utils.markdown import hbold, hcode
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Button
@@ -45,7 +45,7 @@ async def go_to_order(
 async def go_to_deposit_balance(
     callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
-    await dialog_manager.start(Payment.available_method)
+    await dialog_manager.start(Payment.deposit_amount)
 
 
 async def get_links(
@@ -166,6 +166,7 @@ async def get_deposit_amount(
         return
 
     dialog_manager.dialog_data.update(total_coins=message.text)
+    await dialog_manager.switch_to(Payment.available_method)
 
 
 def create_order_information(callback, dialog_manager: DialogManager):
@@ -230,6 +231,7 @@ async def generate_crypto_payment(
     config: Config,
     nowpayments: NowPaymentsAPI,
     total_amount_usd: int,
+    currency: str,
     order_id: str,
 ):
     payment = await nowpayments.get_estimated_price(
@@ -239,7 +241,7 @@ async def generate_crypto_payment(
     payment = await nowpayments.create_payment(
         price_amount=total_amount_usd,
         price_currency="usd",
-        pay_currency="usd",
+        pay_currency=currency,
         order_id=order_id,  # replace with your currency
         ipn_callback_url=f"{config.nowpayments.callback_url}",
         pay_amount=payment.estimated_amount,
@@ -253,35 +255,39 @@ async def pay_nowpayments(
     dialog_manager: DialogManager,
 ):
     i18n: "TranslatorRunner" = dialog_manager.middleware_data.get("i18n")
+    await callback.answer()
+    total_coins, total_amount_usd, order_id, order_date = create_order_information(
+        callback, dialog_manager
+    )
+    if total_coins < 100:
+        await callback.message.edit_text(i18n.amount_less_100())
+        return
+    # answer with loading emoji
+    await callback.message.edit_text("⏳")
+    currency = button.widget_id.split("_")[-1]
     repo: Repo = dialog_manager.middleware_data.get("repo")
     nowpayments: NowPaymentsAPI = dialog_manager.middleware_data.get("nowpayments")
     config: Config = dialog_manager.middleware_data.get("config")
 
-    total_coins, total_amount_usd, order_id, order_date = create_order_information(
-        callback, dialog_manager
-    )
 
+    crypto_amount = await nowpayments.get_estimated_price(
+        currency, amount=total_amount_usd
+    )
     tx_id = await repo.create_tx(
         order_id,
         callback.from_user.id,
-        amount=total_amount_usd,
-        currency="USD",
+        amount=crypto_amount.estimated_amount,
+        currency=currency,
         amount_points=total_coins,
     )
 
     payment = await generate_crypto_payment(
-        config, nowpayments, total_amount_usd, order_id
+        config, nowpayments, total_amount_usd, currency, order_id
     )
-    #     await callback_query.message.answer(
-    #         f'Please send not less than <b>{payment.pay_amount:.6f} {currency.upper()}</b> to the address below. '
-    #         f'You will be notified when the payment is received.\n\n'
-    #         f'🔎 Address: <code>{payment.pay_address}</code>\n'
-    #         f'💰 Amount: <code>{payment.pay_amount:.6f}</code>\n\n'
-    #     )
     await callback.message.edit_text(
         i18n.pay_message_crypto(
-            pay_amount=hbold(str(payment.pay_amount)),
-            pay_address=hbold(str(payment.pay_address)),
-            pay_currency=hbold(str(payment.pay_currency)),
+            crypto_amount=hcode(str(round(payment.pay_amount * 100000) / 100000)),
+            address=hbold(str(payment.pay_address)),
+            currency=hbold(str(payment.pay_currency)),
         ),
     )

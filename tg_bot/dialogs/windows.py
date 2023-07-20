@@ -1,10 +1,10 @@
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from aiogram.utils import i18n
 from aiogram_dialog import Window
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Back, Cancel, Group, Button, SwitchTo
-from aiogram_dialog.widgets.text import Format
+from aiogram_dialog.widgets.text import Format, Const
 
 from . import selected
 from .getters import profile_getter, get_order_text, get_lang_setting
@@ -16,7 +16,7 @@ from .selected import (
     go_to_deposit_balance,
     go_to_settings,
     on_submit_order,
-    go_to_payment, get_deposit_amount,
+    get_deposit_amount,
 )
 from .states import BotMenu, Order, LanguageMenu, Payment
 from ..utils.widgets import (
@@ -29,7 +29,7 @@ from ..utils.widgets import (
 if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
 
-i18n: Union["TranslatorRunner", Translation] = Translation()
+i18n: "TranslatorRunner" = Translation()
 
 
 def main_user_menu_window():
@@ -147,7 +147,16 @@ def deposit():
         Window(
             TranslatableFormat(i18n.choose_crypto_currency()),
             # Make choose currency
-            Group(),
+            Group(
+                *[
+                    Button(
+                        Const(currency.upper()),
+                        id=f"pay_{currency}",
+                        on_click=selected.pay_nowpayments,
+                    )
+                    for currency in ["btc", "eth", "ltc", "usdttrc20"]
+                ]
+            ),
             Back(TranslatableFormat(i18n.back_button())),
             state=Payment.choose_crypto_currency,
         ),
