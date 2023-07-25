@@ -243,7 +243,7 @@ async def generate_crypto_payment(
         pay_amount=estimated.estimated_amount,
         price_currency="usd",
         pay_currency=currency,
-        order_id=order_id,  # replace with your currency
+        order_id=order_id,
         ipn_callback_url=f"{config.nowpayments.callback_url}",
     )
     return payment

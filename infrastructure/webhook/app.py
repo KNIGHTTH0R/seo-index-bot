@@ -65,6 +65,24 @@ def check_signature_wayforpay(response):
     return result
 
 
+async def update_payment_status_and_send_message(order_id: str, session):
+    repo = Repo(session)
+    tx = await repo.get_tx(order_id)
+    if not tx:
+        return JSONResponse(status_code=400, content={"error": "Transaction not found"})
+    if tx.status:
+        return JSONResponse(
+            status_code=400, content={"error": "Transaction already paid"}
+        )
+    await repo.update_tx_paid(order_id)
+
+    await bot.send_message(
+        tx.fk_tg_id,
+        # Add Translations
+        f"Your payment is confirmed. {tx.amount_points} points were added to your account",
+    )
+
+
 @app.post(f"/wayforpay/callback")
 async def wayforpay_webhook_endpoint(request: fastapi.Request):
     try:
@@ -100,38 +118,18 @@ async def wayforpay_webhook_endpoint(request: fastapi.Request):
         ),
     )
     logging.info(f"Response signature: {response_signature}, {received_signature}")
-    # if data.transactionStatus == "Approved":
-    #     async with session_maker() as session:
-    #         repo = Repo(session)
-    #         tx = await repo.get_tx(data.orderReference)
-    #         if not tx:
-    #             return JSONResponse(
-    #                 status_code=400, content={"error": "Transaction not found"}
-    #             )
-    #         if tx.status:
-    #             return JSONResponse(
-    #                 status_code=400, content={"error": "Transaction already paid"}
-    #             )
-    #         await repo.update_tx_paid(data.orderReference)
-    #         await repo.add_tokens(
-    #             tx.user_id, tx.tokens_num, pricing_tier_id=tx.pricing_tier_id
-    #         )
-    #         await session.commit()
-    #
-    #         await bot.send_message(
-    #             tx.user_id,
-    #             f"Thank you for your payment! Your {tx.tokens_num} tokens were added to your account!",
-    #         )
-    #         user = await repo.get_user(tx.user_id)
+    if data.transactionStatus == "Approved":
+        async with session_maker() as session:
+            await update_payment_status_and_send_message(data.orderReference, session)
 
-    # response_data = {
-    #     "orderReference": data.orderReference,
-    #     "status": "accept",
-    #     "time": resp_time,
-    #     "signature": response_signature,
-    # }
-    #
-    # return JSONResponse(content=response_data)
+    response_data = {
+        "orderReference": data.orderReference,
+        "status": "accept",
+        "time": resp_time,
+        "signature": response_signature,
+    }
+
+    return JSONResponse(content=response_data)
 
 
 async def validate_request(request: Request):
@@ -164,24 +162,12 @@ async def nowpayments_route(request: Request):
         return {"status": "Not paid"}
     log.info(f"Status is {payment_update.payment_status}")
 
-    if payment_update.payment_status in (
-        PaymentStatus.CONFIRMED,
-        PaymentStatus.FINISHED,
-        PaymentStatus.SENDING,
+    if payment_update.payment_status == PaymentStatus.FINISHED or (
+        payment_update.payment_status
+        in (PaymentStatus.CONFIRMED, PaymentStatus.SENDING)
+        and payment_update.actually_paid >= payment_update.pay_amount
     ):
-        pass
-        # async with session_maker() as session:
-        # if (
-        #     status := await get_tx_status(session, payment_update.pay_address)
-        # ) is not False:
-        #     return
-        #
-        # await update_tx_paid(
-        #     session, payment_update.pay_address, str(payment_update.purchase_id)
-        # )
-        # await session.commit()
-        # tx: Transaction = await get_tx_info(session, int(payment_update.order_id))
-        # await bot.send_message(
-        #     tx.user_id,
-        #     f"Your payment is confirmed. {tx.checks_num} checks were added to your account",
-        # )
+        async with session_maker() as session:
+            await update_payment_status_and_send_message(
+                payment_update.order_id, session
+            )
