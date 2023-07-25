@@ -31,28 +31,28 @@ from ..utils.utils import button_confirm, extract_links
 
 
 async def to_profile(
-        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.switch_to(BotMenu.profile)
 
 
 async def go_to_order(
-        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.start(Order.get_url)
 
 
 async def go_to_deposit_balance(
-        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.start(Payment.deposit_amount)
 
 
 async def get_links(
-        message: Message,
-        MessageInput,
-        dialog_manager: DialogManager,
-        **kwargs,
+    message: Message,
+    MessageInput,
+    dialog_manager: DialogManager,
+    **kwargs,
 ):
     bot = dialog_manager.middleware_data["bot"]
     i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
@@ -88,9 +88,9 @@ async def get_links(
 
 
 async def on_submit_order(
-        callback: CallbackQuery,
-        button: Button,
-        dialog_manager: DialogManager,
+    callback: CallbackQuery,
+    button: Button,
+    dialog_manager: DialogManager,
 ):
     i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
     repo = dialog_manager.middleware_data.get("repo")
@@ -150,15 +150,15 @@ def open_close_menu(switch_to: State):
 
 
 async def go_to_settings(
-        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.start(LanguageMenu.menu)
 
 
 async def get_deposit_amount(
-        message: Message,
-        widget: MessageInput,
-        dialog_manager: DialogManager,
+    message: Message,
+    widget: MessageInput,
+    dialog_manager: DialogManager,
 ):
     i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
     if not message.text.isdigit():
@@ -176,15 +176,15 @@ def create_order_information(callback, dialog_manager: DialogManager):
     order_time = datetime.datetime.now().timestamp()
     order_date = int(order_time)
     order_id = (
-            f"{callback.from_user.id}-{total_coins}-"
-            + hashlib.sha1(str(order_date).encode()).hexdigest()
+        f"{callback.from_user.id}-{total_coins}-"
+        + hashlib.sha1(str(order_date).encode()).hexdigest()
     )
 
     return total_coins, total_amount_usd, order_id, order_date
 
 
 async def pay_wayforpay(
-        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     i18n: "TranslatorRunner" = dialog_manager.middleware_data.get("i18n")
     repo: Repo = dialog_manager.middleware_data.get("repo")
@@ -228,14 +228,14 @@ async def pay_wayforpay(
 
 
 async def generate_crypto_payment(
-        config: Config,
-        nowpayments: NowPaymentsAPI,
-        total_amount_usd: int,
-        currency: str,
-        order_id: str,
+    config: Config,
+    nowpayments: NowPaymentsAPI,
+    total_amount_usd: int,
+    currency: str,
+    order_id: str,
 ):
     estimated = await nowpayments.get_estimated_price(
-        "usd", amount=total_amount_usd
+        currency, amount=total_amount_usd
     )  # replace with your currency
 
     payment = await nowpayments.create_payment(
@@ -250,9 +250,9 @@ async def generate_crypto_payment(
 
 
 async def pay_nowpayments(
-        callback: CallbackQuery,
-        button: Button,
-        dialog_manager: DialogManager,
+    callback: CallbackQuery,
+    button: Button,
+    dialog_manager: DialogManager,
 ):
     i18n: "TranslatorRunner" = dialog_manager.middleware_data.get("i18n")
     await callback.answer()
@@ -287,6 +287,6 @@ async def pay_nowpayments(
         i18n.pay_message_crypto(
             crypto_amount=hcode(str(round(payment.pay_amount * 100000) / 100000)),
             address=hbold(str(payment.pay_address)),
-            currency=hbold(str(payment.pay_currency)),
+            currency=hbold(str(payment.pay_currency).upper()),
         ),
     )
