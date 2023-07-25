@@ -112,6 +112,7 @@ def language_menu_window():
             ],
             on_click=selected.set_language(switch_to=LanguageMenu.menu),
             on_open_close=selected.open_close_menu(switch_to=LanguageMenu.menu),
+            always_open=True
         ),
         Cancel(TranslatableFormat(i18n.back_button())),
         state=LanguageMenu.menu,

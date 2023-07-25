@@ -50,6 +50,7 @@ async def main():
     ):
         dp.message.outer_middleware(global_middleware)
         dp.callback_query.outer_middleware(global_middleware)
+
     dp.workflow_data.update(
         wayforpay=wayforpay,
         nowpayments=nowpayments,

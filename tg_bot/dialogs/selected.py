@@ -234,17 +234,17 @@ async def generate_crypto_payment(
         currency: str,
         order_id: str,
 ):
-    payment = await nowpayments.get_estimated_price(
+    estimated = await nowpayments.get_estimated_price(
         "usd", amount=total_amount_usd
     )  # replace with your currency
 
     payment = await nowpayments.create_payment(
         price_amount=total_amount_usd,
+        pay_amount=estimated.estimated_amount,
         price_currency="usd",
         pay_currency=currency,
         order_id=order_id,  # replace with your currency
         ipn_callback_url=f"{config.nowpayments.callback_url}",
-        pay_amount=payment.estimated_amount,
     )
     return payment
 

@@ -4,4 +4,9 @@ from .windows import main_user_menu_window, order_links, language_menu_window, d
 
 
 def bot_menu_dialogs():
-    return [Dialog(*main_user_menu_window()), Dialog(*order_links()), Dialog(language_menu_window()), Dialog(*deposit())]
+    return [
+        Dialog(*main_user_menu_window()),
+        Dialog(*order_links()),
+        Dialog(language_menu_window()),
+        Dialog(*deposit()),
+    ]
