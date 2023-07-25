@@ -14,7 +14,7 @@ class Repo:
         self.session: AsyncSession = session
 
     async def check_user(
-        self, tg_id: int, username: Optional[str], full_name: str
+            self, tg_id: int, username: Optional[str], full_name: str
     ) -> User:
         statement = (
             insert(User)
@@ -61,18 +61,19 @@ class Repo:
         result = await self.session.execute(statement)
         return result.fetchone()
 
-    # async def transaction_minus(self, tg_id: int, amount_points: int) -> None:
-    #     statement = insert(Transaction).values(
-    #         fk_tg_id=tg_id, amount_points=amount_points
-    #     )
-    #     await self.session.scalars(statement)
+    async def transaction_minus(self, tg_id: int, amount_points: int) -> None:
+        statement = insert(Transaction).values(
+            fk_tg_id=tg_id, amount_points=amount_points)
+        await self.session.scalars(statement)
+        await self.session.commit()
+
     async def create_tx(
-        self,
-        order_id: str,
-        tg_id: int,
-        amount_points: int,
-        amount: int = None,
-        currency: str = None,
+            self,
+            order_id: str,
+            tg_id: int,
+            amount_points: int,
+            amount: int = None,
+            currency: str = None,
     ) -> None:
         statement = insert(Transaction).values(
             order_id=order_id,

@@ -77,7 +77,7 @@ class TranslatableFormat(Text):
 @dataclass
 class Option:
     id: str
-    text: str
+    text: Any
     when_key: str
 
 

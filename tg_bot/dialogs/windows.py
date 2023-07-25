@@ -101,12 +101,12 @@ def language_menu_window():
             options=[
                 Option(
                     id="set_lang_uk",
-                    text=i18n.dialogs.buttons.ukranian(),
+                    text=Const("Українська"),
                     when_key="lang_uk",
                 ),
                 Option(
                     id="set_lang_ru",
-                    text=i18n.dialogs.buttons.russian(),
+                    text=Const("Русский"),
                     when_key="lang_ru",
                 ),
             ],

@@ -64,8 +64,6 @@ pre_confirm_text =
 
 language_changed = Мова змінена на українську
 
-dialogs-buttons-ukranian = Українська
-dialogs-buttons-russian = Русский
 
 
 pay_message =

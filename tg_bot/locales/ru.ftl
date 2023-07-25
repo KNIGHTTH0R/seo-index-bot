@@ -56,8 +56,7 @@ pre_confirm_text =
 
 message_order_not_found = Заказ не найден
 
-dialogs-buttons-ukranian = Українська
-dialogs-buttons-russian = Русский
+
 
 pay_message =
     Сумма к оплате: ${ $usd_amount }
