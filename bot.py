@@ -59,7 +59,7 @@ async def main():
     setup_dialogs(dp)
 
     await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot, config=config)
+    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types(), config=config)
 
 
 if __name__ == "__main__":
