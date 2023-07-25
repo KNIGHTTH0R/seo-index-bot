@@ -14,7 +14,7 @@ class Repo:
         self.session: AsyncSession = session
 
     async def check_user(
-            self, tg_id: int, username: Optional[str], full_name: str
+        self, tg_id: int, username: Optional[str], full_name: str
     ) -> User:
         statement = (
             insert(User)
@@ -63,17 +63,19 @@ class Repo:
 
     async def transaction_minus(self, tg_id: int, amount_points: int) -> None:
         statement = insert(Transaction).values(
-            fk_tg_id=tg_id, amount_points=amount_points)
+            fk_tg_id=tg_id, amount_points=amount_points, status=True
+        )
         await self.session.scalars(statement)
         await self.session.commit()
 
     async def create_tx(
-            self,
-            order_id: str,
-            tg_id: int,
-            amount_points: int,
-            amount: int = None,
-            currency: str = None,
+        self,
+        order_id: str,
+        tg_id: int,
+        amount_points: int,
+        amount: int = None,
+        currency: str = None,
+        status: bool = False,
     ) -> None:
         statement = insert(Transaction).values(
             order_id=order_id,
@@ -81,6 +83,21 @@ class Repo:
             amount_points=amount_points,
             amount=amount,
             currency=currency,
+            status=status,
+        )
+        await self.session.execute(statement)
+        await self.session.commit()
+
+    async def get_tx(self, order_id: str) -> Transaction:
+        statement = select(Transaction).where(Transaction.order_id == order_id)
+        result = await self.session.scalars(statement)
+        return result.first()
+
+    async def update_tx_paid(self, order_id: str) -> None:
+        statement = (
+            update(Transaction)
+            .values(status=True)
+            .where(Transaction.order_id == order_id)
         )
         await self.session.execute(statement)
         await self.session.commit()
