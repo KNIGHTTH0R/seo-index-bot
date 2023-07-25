@@ -6,7 +6,7 @@ from typing import Dict
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.common import WhenCondition
 from aiogram_dialog.widgets.kbd import Button, Group
-from aiogram_dialog.widgets.text import Text, Multi
+from aiogram_dialog.widgets.text import Text, Multi, Format, Const
 from fluentogram import AttribTracer, TranslatorRunner
 
 
@@ -119,10 +119,12 @@ def dropdown_on_off_menu(
             *[
                 Button(
                     Multi(
-                        TranslatableFormat(
-                            i18n.dialogs.buttons.check_mark(), when=option.when_key
+                        Const("✅", when=option.when_key),
+                        (
+                            TranslatableFormat(option.text)
+                            if not isinstance(option.text, (Const, Format))
+                            else option.text
                         ),
-                        TranslatableFormat(option.text),
                         sep=" ",
                     ),
                     id=option.id,

@@ -4,7 +4,7 @@ import logging
 import betterlogging as bl
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.storage.redis import RedisStorage, DefaultKeyBuilder
 from aiogram_dialog import setup_dialogs
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
@@ -28,7 +28,10 @@ async def main():
     )
     logger.info("Starting tg_bot")
     config = load_config(".env")
-    storage = MemoryStorage()
+    storage = RedisStorage.from_url(
+        config.redis.dsn(),
+        key_builder=DefaultKeyBuilder(with_bot_id=True, with_destiny=True),
+    )
 
     engine = create_async_engine(config.db.construct_sqlalchemy_url(), echo=True)
     session_maker = async_sessionmaker(engine, expire_on_commit=False)
@@ -44,9 +47,9 @@ async def main():
     nowpayments = NowPaymentsAPI(config.nowpayments.api_key)
 
     for global_middleware in (
-            RepoMiddleware(session_maker=session_maker),
-            TranslationMiddleware(),
-            CheckUser(),
+        RepoMiddleware(session_maker=session_maker),
+        TranslationMiddleware(),
+        CheckUser(),
     ):
         dp.message.outer_middleware(global_middleware)
         dp.callback_query.outer_middleware(global_middleware)
@@ -60,7 +63,9 @@ async def main():
     setup_dialogs(dp)
 
     await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types(), config=config)
+    await dp.start_polling(
+        bot, allowed_updates=dp.resolve_used_update_types(), config=config
+    )
 
 
 if __name__ == "__main__":
