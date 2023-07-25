@@ -40,10 +40,10 @@ class TranslationMiddleware(BaseMiddleware):
         event: Message,
         data: Dict[str, Any],
     ) -> Any:
-        user: User = data.get("user")
+        user: User = data.get("user_info")
 
         translator_runner: TranslatorRunner = self.t_hub.get_translator_by_locale(
-            User.language
+            user.language
         )
 
         data["i18n"] = translator_runner

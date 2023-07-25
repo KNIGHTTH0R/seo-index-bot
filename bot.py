@@ -48,8 +48,8 @@ async def main():
 
     for global_middleware in (
         RepoMiddleware(session_maker=session_maker),
-        TranslationMiddleware(),
         CheckUser(),
+        TranslationMiddleware(),
     ):
         dp.message.outer_middleware(global_middleware)
         dp.callback_query.outer_middleware(global_middleware)
