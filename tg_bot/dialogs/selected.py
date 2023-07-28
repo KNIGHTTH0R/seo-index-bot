@@ -195,7 +195,7 @@ async def pay_wayforpay(
     wayforpay: WayForPayAPI = dialog_manager.middleware_data.get("wayforpay")
 
     invoice = await wayforpay.create_invoice(
-        product_name=f"Поповнення балансу на суму {total_amount_usd} грн.",
+        product_name=f"Поповнення балансу на суму {total_coins} монет.",
         product_price=total_amount_usd,
         product_count=1,
         currency="USD",
