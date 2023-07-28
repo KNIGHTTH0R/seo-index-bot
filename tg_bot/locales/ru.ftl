@@ -91,3 +91,5 @@ pay_message_crypto =
 amount_less_100 = Сумма не может быть меньше 100 монет для оплаты криптовалютой
 
 success_payment = Спасибо за оплату! Ваши токены {$tx.tokens_num} добавлены в ваш аккаунт!
+
+confirmed_by_payment = Ваш платеж подтвержден. На ваш счет добавлено {$tx.amount_points} баллов

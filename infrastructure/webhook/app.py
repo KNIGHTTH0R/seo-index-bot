@@ -4,6 +4,7 @@ import json
 import logging
 from datetime import datetime
 from json import JSONDecodeError
+from typing import TYPE_CHECKING
 
 import betterlogging as bl
 import fastapi
@@ -19,6 +20,8 @@ from infrastructure.database.repo.base import Repo
 from infrastructure.nowpayments.types import PaymentStatus, PaymentUpdate
 from infrastructure.webhook.types import WayforpayRequestData
 from tg_bot.config_reader import load_config, Config
+if TYPE_CHECKING:
+    from tg_bot.locales.stub import TranslatorRunner
 
 app = FastAPI()
 log_level = logging.INFO
@@ -65,7 +68,7 @@ def check_signature_wayforpay(response):
     return result
 
 
-async def update_payment_status_and_send_message(order_id: str, session):
+async def update_payment_status_and_send_message(order_id: str, session, i18n: "TranslatorRunner"):
     repo = Repo(session)
     tx = await repo.get_tx(order_id)
     if not tx:
@@ -79,7 +82,7 @@ async def update_payment_status_and_send_message(order_id: str, session):
     await bot.send_message(
         tx.fk_tg_id,
         # Add Translations
-        f"Your payment is confirmed. {tx.amount_points} points were added to your account",
+        text=i18n.confirmed_by_payment()
     )
 
 
