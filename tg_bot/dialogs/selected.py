@@ -171,7 +171,7 @@ async def get_deposit_amount(
 
 def create_order_information(callback, dialog_manager: DialogManager):
     total_coins = int(dialog_manager.dialog_data.get("total_coins"))
-    total_amount_usd = total_coins * 0.2
+    total_amount_usd = int(math.ceil(total_coins * 0.2))
     order_time = datetime.datetime.now().timestamp()
     order_date = int(order_time)
     order_id = (
