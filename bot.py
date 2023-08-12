@@ -10,15 +10,20 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from infrastructure.nowpayments.api import NowPaymentsAPI
 from infrastructure.wayforpay.api import WayForPayAPI
-from tg_bot.config_reader import load_config
+from tg_bot.config_reader import load_config, Config
 from tg_bot.dialogs.dialog import bot_menu_dialogs
 from tg_bot.handlers.user import user_router
 from tg_bot.middlewares.repo import RepoMiddleware, CheckUser
 from tg_bot.middlewares.translator import TranslationMiddleware
+from tg_bot.utils.broadcaster import broadcast
 
 logger = logging.getLogger(__name__)
 log_level = logging.INFO
 bl.basic_colorized_config(level=log_level)
+
+
+async def on_startup(dispatcher, bot: Bot, config: Config):
+    await broadcast(bot, config.tg_bot.admin_ids, "Бот запущен!")
 
 
 async def main():
@@ -47,9 +52,9 @@ async def main():
     nowpayments = NowPaymentsAPI(config.nowpayments.api_key)
 
     for global_middleware in (
-        RepoMiddleware(session_maker=session_maker),
-        CheckUser(),
-        TranslationMiddleware(),
+            RepoMiddleware(session_maker=session_maker),
+            CheckUser(),
+            TranslationMiddleware(),
     ):
         dp.message.outer_middleware(global_middleware)
         dp.callback_query.outer_middleware(global_middleware)
@@ -63,6 +68,7 @@ async def main():
     setup_dialogs(dp)
 
     await bot.delete_webhook(drop_pending_updates=True)
+    dp.startup.register(on_startup)
     await dp.start_polling(
         bot, allowed_updates=dp.resolve_used_update_types(), config=config
     )
