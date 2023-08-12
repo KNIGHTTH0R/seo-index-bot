@@ -171,8 +171,7 @@ async def get_deposit_amount(
 
 def create_order_information(callback, dialog_manager: DialogManager):
     total_coins = int(dialog_manager.dialog_data.get("total_coins"))
-    total_amount_usd = int(math.ceil(total_coins / 20))
-
+    total_amount_usd = total_coins * 0.2
     order_time = datetime.datetime.now().timestamp()
     order_date = int(order_time)
     order_id = (
@@ -181,7 +180,6 @@ def create_order_information(callback, dialog_manager: DialogManager):
     )
 
     return total_coins, total_amount_usd, order_id, order_date
-
 
 async def pay_wayforpay(
     callback: CallbackQuery, button: Button, dialog_manager: DialogManager
