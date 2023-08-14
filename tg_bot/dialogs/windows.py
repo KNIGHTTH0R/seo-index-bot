@@ -136,11 +136,11 @@ def deposit():
                     id="wayforpay",
                     on_click=pay_wayforpay,
                 ),
-                SwitchTo(
-                    TranslatableFormat(i18n.nowpayments()),
-                    id="nowpayments",
-                    state=Payment.choose_crypto_currency,
-                ),
+                # SwitchTo(
+                #     TranslatableFormat(i18n.nowpayments()),
+                #     id="nowpayments",
+                #     state=Payment.choose_crypto_currency,
+                # ),
             ),
             Back(TranslatableFormat(i18n.back_button())),
             state=Payment.available_method,

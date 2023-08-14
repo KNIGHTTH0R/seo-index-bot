@@ -16,6 +16,7 @@ from tg_bot.handlers.user import user_router
 from tg_bot.middlewares.repo import RepoMiddleware, CheckUser
 from tg_bot.middlewares.translator import TranslationMiddleware
 from tg_bot.utils.broadcaster import broadcast
+from tg_bot.utils.default_commands import collect_and_assign_commands
 
 logger = logging.getLogger(__name__)
 log_level = logging.INFO
@@ -23,6 +24,7 @@ bl.basic_colorized_config(level=log_level)
 
 
 async def on_startup(dispatcher, bot: Bot, config: Config):
+    await collect_and_assign_commands(dispatcher.sub_routers, bot, sort=False)
     await broadcast(bot, config.tg_bot.admin_ids, "Бот запущен!")
 
 
