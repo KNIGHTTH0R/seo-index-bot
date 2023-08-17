@@ -29,7 +29,7 @@ user_router = Router()
 )
 async def user_start(message: Message, i18n: "TranslatorRunner"):
     await message.answer(i18n.hello(),
-                         reply_markup=main_user_menu())
+                         reply_markup=main_user_menu(i18n))
 
 
 @user_router.message(Command("menu"))

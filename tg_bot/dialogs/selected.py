@@ -20,6 +20,7 @@ from aiogram_dialog.widgets.kbd import Button
 from infrastructure.database.repo.base import Repo
 from infrastructure.nowpayments.api import NowPaymentsAPI
 from infrastructure.wayforpay.api import WayForPayAPI
+from ..keyboards.inline import main_user_menu
 
 if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
@@ -131,7 +132,8 @@ def set_language(switch_to: State):
             language,
         )
         manager.middleware_data.update(i18n=i18n)
-        await c.answer(i18n.language_changed())
+        await c.message.answer(text=i18n.language_changed(),
+                               reply_markup=main_user_menu(i18n))
 
     return wrapper
 

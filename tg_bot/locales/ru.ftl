@@ -78,6 +78,7 @@ choose_payment_method = Выберите метод платежа
 wayforpay = WayForPay
 nowpayments = NowPayments
 
+language_changed = Язык изменен на русский
 choose_crypto_currency = Выберите криптовалюту
 
 
