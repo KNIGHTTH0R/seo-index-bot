@@ -167,6 +167,10 @@ async def get_deposit_amount(
         await message.answer(i18n.not_digit())
         return
 
+    if int(message.text) < 10:
+        await message.answer(i18n.min_deposit())
+        return
+
     dialog_manager.dialog_data.update(total_coins=message.text)
     await dialog_manager.switch_to(Payment.available_method)
 
@@ -259,8 +263,9 @@ async def pay_nowpayments(
     total_coins, total_amount_usd, order_id, order_date = create_order_information(
         callback, dialog_manager
     )
-    if total_coins < 100:
-        await callback.message.edit_text(i18n.amount_less_100())
+    if total_coins < 35:
+        await callback.message.answer(i18n.amount_less_35())
+        await dialog_manager.switch_to(Payment.deposit_amount)
         return
     # answer with loading emoji
     await callback.message.edit_text("⏳")

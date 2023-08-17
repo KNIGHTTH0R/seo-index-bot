@@ -32,7 +32,7 @@ class Repo:
 
     async def get_balance(self, tg_id: int) -> int:
         statement = select(func.coalesce(func.sum(Transaction.amount_points), 0)).where(
-            Transaction.fk_tg_id == tg_id
+            Transaction.fk_tg_id == tg_id, Transaction.status == True
         )
         result = await self.session.execute(statement)
         return result.scalar()

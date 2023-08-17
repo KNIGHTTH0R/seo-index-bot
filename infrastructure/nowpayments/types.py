@@ -64,12 +64,12 @@ class PaymentUpdate(BaseModel):
     price_currency: str
     pay_amount: float
     actually_paid: float
-    actually_paid_in_fiat: Optional[float]
+    actually_paid_in_fiat: Optional[float] = None
     pay_currency: str
-    order_id: Optional[str]
-    order_description: Optional[str]
+    order_id: Optional[str] = None
+    order_description: Optional[str] = None
     purchase_id: str
-    created_at: str
+    created_at: str = None
     updated_at: str
     outcome_amount: float
     outcome_currency: str
