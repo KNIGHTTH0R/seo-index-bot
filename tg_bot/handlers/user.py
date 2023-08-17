@@ -90,7 +90,3 @@ async def go_to_deposit_balance(message: Message, dialog_manager: DialogManager)
 async def go_to_settings(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(LanguageMenu.menu, mode=StartMode.RESET_STACK)
 
-
-@user_router.message()
-async def unknown_message(message: Message, i18n: "TranslatorRunner"):
-    await message.answer("Unknown message", reply_markup=main_user_menu(i18n))
