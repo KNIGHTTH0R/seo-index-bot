@@ -67,7 +67,7 @@ class Repo:
 
     async def transaction_minus(self, tg_id: int, amount_points: int) -> None:
         statement = insert(Transaction).values(
-            fk_tg_id=tg_id, amount_points=amount_points, status=True
+            fk_tg_id=tg_id, amount_points=amount_points, status=True, comment='expense'
         )
         await self.session.scalars(statement)
         await self.session.commit()
