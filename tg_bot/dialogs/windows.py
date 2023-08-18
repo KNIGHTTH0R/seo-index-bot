@@ -2,12 +2,12 @@ from typing import TYPE_CHECKING
 
 from aiogram.utils import i18n
 from aiogram_dialog import Window
-from aiogram_dialog.widgets.input import MessageInput
+from aiogram_dialog.widgets.input import MessageInput, TextInput
 from aiogram_dialog.widgets.kbd import Back, Cancel, Group, Button, SwitchTo
 from aiogram_dialog.widgets.text import Format, Const
 
 from . import selected
-from .getters import profile_getter, get_order_text, get_lang_setting
+from .getters import profile_getter, get_order_text, get_lang_setting, get_stats
 from .selected import (
     get_links,
     pay_wayforpay,
@@ -16,9 +16,10 @@ from .selected import (
     go_to_deposit_balance,
     go_to_settings,
     on_submit_order,
-    get_deposit_amount,
+    get_deposit_amount, on_error_func, get_id_menu, to_suma_menu, get_suma, to_back_menu_admin, to_stats,
 )
-from .states import BotMenu, Order, LanguageMenu, Payment
+from .states import BotMenu, Order, LanguageMenu, Payment, AdminMenu
+from ..utils.utils import type_factory_advanced
 from ..utils.widgets import (
     Translation,
     TranslatableFormat,
@@ -161,4 +162,43 @@ def deposit():
             Back(TranslatableFormat(i18n.back_button())),
             state=Payment.choose_crypto_currency,
         ),
+    ]
+
+
+def admin_menu():
+    return [
+        Window(
+            Const("Меню администратора"),
+            Button(Const("Изменить баланс пользователю"), on_click=get_id_menu, id="change_balance"),
+            Button(Const("Статистика"), on_click=to_stats, id="stats_menu"),
+            state=AdminMenu.menu
+        ),
+        Window(
+            Const("Введить id или username пользователя. Пример @sad"),
+            TextInput(
+                id="id_user",
+                on_success=to_suma_menu,
+                type_factory=type_factory_advanced,
+                on_error=on_error_func,
+            ),
+            Back(Const("Назад")),
+            state=AdminMenu.id,
+        ),
+        Window(
+            Const("Введите сумму: "),
+            TextInput(
+                id="suma",
+                on_success=get_suma,
+                type_factory=int,
+                on_error=on_error_func
+            ),
+            Back(Const("Назад")),
+            state=AdminMenu.suma,
+        ),
+        Window(
+            Format("<b>Статистика:\nЗа 1 день: {day_stats}$\nЗа неделю: {week_stats}$\nЗа две недели: {two_weeks_stats}$\nЗа месяц: {month_stats}$\nВсего пользователей: {users_count}</b>"),
+            Button(Const("Назад"), id="back_menu", on_click=to_back_menu_admin),
+            getter=get_stats,
+            state=AdminMenu.stats,
+        )
     ]
