@@ -19,3 +19,10 @@ class Payment(StatesGroup):
 
 class LanguageMenu(StatesGroup):
     menu = State()
+
+
+class AdminMenu(StatesGroup):
+    menu = State()
+    id = State()
+    suma = State()
+    stats = State()
