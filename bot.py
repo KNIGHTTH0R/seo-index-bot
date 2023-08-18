@@ -12,6 +12,7 @@ from infrastructure.nowpayments.api import NowPaymentsAPI
 from infrastructure.wayforpay.api import WayForPayAPI
 from tg_bot.config_reader import load_config, Config
 from tg_bot.dialogs.dialog import bot_menu_dialogs
+from tg_bot.handlers.admin import admin_router
 from tg_bot.handlers.echo import echo_router
 from tg_bot.handlers.user import user_router
 from tg_bot.middlewares.repo import RepoMiddleware, CheckUser
@@ -67,7 +68,7 @@ async def main():
         nowpayments=nowpayments,
     )
 
-    dp.include_routers(user_router, *bot_menu_dialogs())  # main_window - aiogram dialog
+    dp.include_routers(admin_router, user_router, *bot_menu_dialogs())  # main_window - aiogram dialog
     setup_dialogs(dp)
     dp.include_router(echo_router)
     await bot.delete_webhook(drop_pending_updates=True)
