@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import hmac
 import re
@@ -31,3 +32,24 @@ def button_confirm(id_order):
 
 def generate_signature(merchant_key, data_str):
     return hmac.new(merchant_key.encode(), data_str.encode(), hashlib.md5).hexdigest()
+
+
+def create_order(id_user, balance):
+    coins_per_dollar = 5
+    total_coins = balance * coins_per_dollar
+    order_time = datetime.datetime.now().timestamp()
+    order_date = int(order_time)
+    order_id = (
+            f"{id_user}-{total_coins}-"
+            + hashlib.sha1(str(order_date).encode()).hexdigest()
+    )
+    return order_id, total_coins
+
+
+def type_factory_advanced(text: str):
+    id_pattern = r'^-?\d+$'
+    username_pattern = r'^@\w+$'
+    if re.fullmatch(id_pattern, text) or re.fullmatch(username_pattern, text):
+        return text
+    else:
+        raise ValueError('Input does not match any of the expected patterns.')
