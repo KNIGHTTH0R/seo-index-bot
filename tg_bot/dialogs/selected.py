@@ -1,6 +1,8 @@
 import datetime
 import hashlib
+import logging
 import math
+import re
 from io import BytesIO
 from typing import TYPE_CHECKING, Any
 
@@ -15,6 +17,7 @@ from aiogram.types import (
 from aiogram.utils.markdown import hbold, hcode
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.input import MessageInput
+from aiogram_dialog.widgets.input.text import ManagedTextInputAdapter, TextInput, T
 from aiogram_dialog.widgets.kbd import Button
 
 from infrastructure.database.repo.base import Repo
@@ -25,35 +28,35 @@ from ..keyboards.inline import main_user_menu
 if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
 
-from .states import BotMenu, LanguageMenu
+from .states import BotMenu, LanguageMenu, AdminMenu
 from .states import Order, Payment
 from ..config_reader import load_config, Config
-from ..utils.utils import button_confirm, extract_links
+from ..utils.utils import button_confirm, extract_links, create_order
 
 
 async def to_profile(
-    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.switch_to(BotMenu.profile)
 
 
 async def go_to_order(
-    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.start(Order.get_url)
 
 
 async def go_to_deposit_balance(
-    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.start(Payment.deposit_amount)
 
 
 async def get_links(
-    message: Message,
-    MessageInput,
-    dialog_manager: DialogManager,
-    **kwargs,
+        message: Message,
+        mi: MessageInput,
+        dialog_manager: DialogManager,
+        **kwargs,
 ):
     bot = dialog_manager.middleware_data["bot"]
     i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
@@ -63,13 +66,13 @@ async def get_links(
         list_urls = extract_links(user_text)
         count_extracted_url = len(list_urls)
         str_links = "\n".join(list_urls)
-        if count_extracted_url >= 1:
+        if count_extracted_url >= 10:
             dialog_manager.dialog_data.update(
                 count_urls=count_extracted_url, urls=str_links
             )
             await dialog_manager.switch_to(Order.confirm_url)
         else:
-            await message.answer(i18n.zero_links())
+            await message.answer(i18n.less_than_10_links())
     elif message.document:
         content = BytesIO()
         document = await bot.download(message.document, content)
@@ -77,21 +80,21 @@ async def get_links(
         list_urls = extract_links(read_document)
         count_extracted_url = len(list_urls)
         str_links = "\n".join(list_urls)
-        if count_extracted_url >= 1:
+        if count_extracted_url >= 10:
             dialog_manager.dialog_data.update(
                 count_urls=count_extracted_url, urls=str_links
             )
             await dialog_manager.switch_to(Order.confirm_url)
         else:
-            await message.answer(i18n.zero_links())
+            await message.answer(i18n.less_than_10_links())
     else:
         await message.answer(i18n.undefined_type_document())
 
 
 async def on_submit_order(
-    callback: CallbackQuery,
-    button: Button,
-    dialog_manager: DialogManager,
+        callback: CallbackQuery,
+        button: Button,
+        dialog_manager: DialogManager,
 ):
     i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
     repo = dialog_manager.middleware_data.get("repo")
@@ -152,15 +155,15 @@ def open_close_menu(switch_to: State):
 
 
 async def go_to_settings(
-    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.start(LanguageMenu.menu)
 
 
 async def get_deposit_amount(
-    message: Message,
-    widget: MessageInput,
-    dialog_manager: DialogManager,
+        message: Message,
+        widget: MessageInput,
+        dialog_manager: DialogManager,
 ):
     i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
     if not message.text.isdigit():
@@ -181,14 +184,15 @@ def create_order_information(callback, dialog_manager: DialogManager):
     order_time = datetime.datetime.now().timestamp()
     order_date = int(order_time)
     order_id = (
-        f"{callback.from_user.id}-{total_coins}-"
-        + hashlib.sha1(str(order_date).encode()).hexdigest()
+            f"{callback.from_user.id}-{total_coins}-"
+            + hashlib.sha1(str(order_date).encode()).hexdigest()
     )
 
     return total_coins, total_amount_usd, order_id, order_date
 
+
 async def pay_wayforpay(
-    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     i18n: "TranslatorRunner" = dialog_manager.middleware_data.get("i18n")
     repo: Repo = dialog_manager.middleware_data.get("repo")
@@ -232,11 +236,11 @@ async def pay_wayforpay(
 
 
 async def generate_crypto_payment(
-    config: Config,
-    nowpayments: NowPaymentsAPI,
-    total_amount_usd: int,
-    currency: str,
-    order_id: str,
+        config: Config,
+        nowpayments: NowPaymentsAPI,
+        total_amount_usd: int,
+        currency: str,
+        order_id: str,
 ):
     estimated = await nowpayments.get_estimated_price(
         currency, amount=total_amount_usd
@@ -254,9 +258,9 @@ async def generate_crypto_payment(
 
 
 async def pay_nowpayments(
-    callback: CallbackQuery,
-    button: Button,
-    dialog_manager: DialogManager,
+        callback: CallbackQuery,
+        button: Button,
+        dialog_manager: DialogManager,
 ):
     i18n: "TranslatorRunner" = dialog_manager.middleware_data.get("i18n")
     await callback.answer()
@@ -295,3 +299,97 @@ async def pay_nowpayments(
             currency=hbold(str(payment.pay_currency).upper()),
         ),
     )
+
+
+async def on_error_func(
+        message: Message,
+        ti: TextInput,
+        dialog_manager: DialogManager
+):
+    await message.answer("<b>Формат неправильный</b>")
+
+
+async def get_id_menu(
+        callback: CallbackQuery,
+        button: Button,
+        dialog_manager: DialogManager
+):
+    await dialog_manager.switch_to(AdminMenu.id)
+
+
+async def to_suma_menu(
+        message: Message,
+        ti: TextInput,
+        dialog_manager: DialogManager,
+        data: str
+):
+    dialog_manager.dialog_data.update(info=message.text)
+    print(message.text)
+    await dialog_manager.switch_to(AdminMenu.suma)
+
+
+async def get_suma(
+        message: Message,
+        ti: TextInput,
+        dialog_manager: DialogManager,
+        data: T
+):
+    dialog_manager.dialog_data.update(suma=int(message.text))
+    bot = dialog_manager.middleware_data.get("bot")
+    repo = dialog_manager.middleware_data.get("repo")
+    info = dialog_manager.dialog_data.get("info")
+    id_match = r'^-?\d+$'
+    username_match = r'^@\w+$'
+    if re.match(id_match, info):
+        id_user = int(info)
+        balance = float(dialog_manager.dialog_data.get("suma"))
+        check_user = await repo.find_user_by_id(tg_id=id_user)
+
+        if check_user:
+            balance = balance
+            current_balance_in_coins = await repo.get_balance(tg_id=id_user)
+            current_balance_in_dollars = current_balance_in_coins * 0.2  # conversion
+            if balance < 0 and current_balance_in_dollars + balance < 0:
+                balance = -current_balance_in_dollars
+            order_id, total_coins = create_order(id_user, balance)
+            await repo.create_tx(order_id=order_id, tg_id=id_user, amount_points=total_coins, amount=balance,
+                                 currency="USD", status=True, comment="admin")
+            await message.answer("Баланс пользователя был успешно изменен")
+            await dialog_manager.switch_to(AdminMenu.menu)
+        else:
+            await message.answer("Юзера с таким айди не существует")
+            await dialog_manager.switch_to(AdminMenu.menu)
+    elif re.match(username_match, info):
+        username = dialog_manager.dialog_data.get("info")[1:]
+        balance = dialog_manager.dialog_data.get("suma")
+        balance = float(balance)
+        id_user = await repo.find_user(username=username)
+        if id_user is not None:
+            current_balance_in_coins = await repo.get_balance(tg_id=id_user)
+            current_balance_in_dollars = current_balance_in_coins * 0.2  # conversion
+            if balance < 0 and current_balance_in_dollars + balance < 0:
+                balance = -current_balance_in_dollars
+            order_id, total_coins = create_order(id_user, balance)
+            await repo.create_tx(order_id=order_id, tg_id=id_user, amount_points=total_coins, amount=balance,
+                                 currency="USD", status=True, comment="admin")
+            await message.answer("Баланс пользователя был успешно изменен")
+            await dialog_manager.switch_to(AdminMenu.menu)
+        else:
+            await message.answer("Юзера с таким username не существует")
+            await dialog_manager.switch_to(AdminMenu.menu)
+
+
+async def to_back_menu_admin(
+        callback: CallbackQuery,
+        button: Button,
+        dialog_manager: DialogManager
+):
+    await dialog_manager.switch_to(AdminMenu.menu)
+
+
+async def to_stats(
+        callback: CallbackQuery,
+        button: Button,
+        dialog_manager: DialogManager
+):
+    await dialog_manager.switch_to(AdminMenu.stats)
