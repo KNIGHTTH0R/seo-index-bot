@@ -26,7 +26,7 @@ async def get_order_id(dialog_manager: DialogManager, **kwargs):
 
 
 async def get_order_text(
-    dialog_manager: DialogManager, i18n: "TranslatorRunner", **kwargs
+        dialog_manager: DialogManager, i18n: "TranslatorRunner", **kwargs
 ):
     count = dialog_manager.dialog_data.get("count_urls")
     return {"pre-confirm-text": i18n.pre_confirm_text(count=count)}
@@ -40,3 +40,17 @@ async def get_lang_setting(dialog_manager: DialogManager, **middleware_data):
             f"lang_{user_info.language}": True,
             **dialog_manager.dialog_data,
         }
+
+
+async def get_stats(dialog_manager: DialogManager, **middleware_data):
+    repo = dialog_manager.middleware_data.get("repo")
+    day_stats, week_stats, two_weeks_stats, month_stats, users_count = await repo.get_stats()
+    stats_dict = {
+        "day_stats": day_stats,
+        "week_stats": week_stats,
+        "two_weeks_stats": two_weeks_stats,
+        "month_stats": month_stats,
+        "users_count": users_count
+    }
+
+    return stats_dict
