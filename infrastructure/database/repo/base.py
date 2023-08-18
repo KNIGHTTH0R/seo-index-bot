@@ -1,12 +1,16 @@
+import asyncio
+import datetime
 from typing import Optional
 
-from sqlalchemy import select, func, update, Row
+from sqlalchemy import select, func, update, Row, and_, case, exists
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.sql.functions import coalesce
 
 from infrastructure.database.models.order import Order
 from infrastructure.database.models.transactions import Transaction
 from infrastructure.database.models.users import User
+from tg_bot.config_reader import load_config
 
 
 class Repo:
@@ -14,7 +18,7 @@ class Repo:
         self.session: AsyncSession = session
 
     async def check_user(
-        self, tg_id: int, username: Optional[str], full_name: str
+            self, tg_id: int, username: Optional[str], full_name: str
     ) -> User:
         statement = (
             insert(User)
@@ -69,13 +73,14 @@ class Repo:
         await self.session.commit()
 
     async def create_tx(
-        self,
-        order_id: str,
-        tg_id: int,
-        amount_points: int,
-        amount: int = None,
-        currency: str = None,
-        status: bool = False,
+            self,
+            order_id: str,
+            tg_id: int,
+            amount_points: int,
+            amount: int = None,
+            currency: str = None,
+            status: bool = False,
+            comment: str = 'topup',
     ) -> None:
         statement = insert(Transaction).values(
             order_id=order_id,
@@ -84,6 +89,7 @@ class Repo:
             amount=amount,
             currency=currency,
             status=status,
+            comment=comment,
         )
         await self.session.execute(statement)
         await self.session.commit()
@@ -113,3 +119,40 @@ class Repo:
         )
         await self.session.execute(statement)
         await self.session.commit()
+
+    async def get_stats(self):
+        now = datetime.datetime.now()
+        one_day_ago = now - datetime.timedelta(days=1)
+        one_week_ago = now - datetime.timedelta(weeks=1)
+        two_weeks_ago = now - datetime.timedelta(weeks=2)
+        one_month_ago = now - datetime.timedelta(weeks=4)
+
+        transaction_statement = select(
+            coalesce(func.sum(case((Transaction.created_at > one_day_ago, Transaction.amount), else_=0)), 0).label(
+                'day'),
+            coalesce(func.sum(case((Transaction.created_at > one_week_ago, Transaction.amount), else_=0)), 0).label(
+                'week'),
+            coalesce(func.sum(case((Transaction.created_at > two_weeks_ago, Transaction.amount), else_=0)), 0).label(
+                'two_weeks'),
+            coalesce(func.sum(case((Transaction.created_at > one_month_ago, Transaction.amount), else_=0)), 0).label(
+                'month')
+        ).where(Transaction.comment == "topup")
+
+        user_count_statement = select(coalesce(func.count(User.tg_id), 0))
+
+        transaction_result = await self.session.execute(transaction_statement)
+        users_count_result = await self.session.execute(user_count_statement)
+
+        day_stats, week_stats, two_weeks_stats, month_stats = transaction_result.fetchone()
+        users_count = users_count_result.scalar_one()
+        return day_stats, week_stats, two_weeks_stats, month_stats, users_count
+
+    async def find_user(self, username: str) -> Optional[int]:
+        statement = select(User.tg_id).where(User.username == username)
+        result = await self.session.execute(statement)
+        return result.scalar()
+
+    async def find_user_by_id(self, tg_id: int) -> bool:
+        statement = select(exists().where(User.tg_id == tg_id))
+        result = await self.session.execute(statement)
+        return result.scalar()
