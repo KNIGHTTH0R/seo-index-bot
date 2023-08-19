@@ -285,6 +285,7 @@ async def pay_nowpayments(
         order_id,
         callback.from_user.id,
         amount=crypto_amount.estimated_amount,
+        usd_amount=total_amount_usd,
         currency=currency,
         amount_points=total_coins,
     )

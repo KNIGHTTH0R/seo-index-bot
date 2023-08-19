@@ -1,16 +1,14 @@
-import asyncio
 import datetime
 from typing import Optional
 
-from sqlalchemy import select, func, update, Row, and_, case, exists
+from sqlalchemy import select, func, update, Row, case, exists
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import coalesce
 
 from infrastructure.database.models.order import Order
 from infrastructure.database.models.transactions import Transaction
 from infrastructure.database.models.users import User
-from tg_bot.config_reader import load_config
 
 
 class Repo:
@@ -34,12 +32,16 @@ class Repo:
         await self.session.commit()
         return result.first()
 
-    async def get_balance(self, tg_id: int) -> int:
-        statement = select(func.coalesce(func.sum(Transaction.amount_points), 0)).where(
+    async def get_balance(self, tg_id: int) -> tuple[int, float]:
+        statement = select(func.coalesce(func.sum(Transaction.amount_points), 0),
+                           func.coalesce(func.sum(Transaction.usd_amount), 0)).where(
             Transaction.fk_tg_id == tg_id, Transaction.status == True
         )
-        result = await self.session.execute(statement)
-        return result.scalar()
+        result = (await self.session.execute(statement)).fetchone()
+        # return result.scalar()
+        if not result:
+            return 0, 0
+        return result
 
     async def add_order(self, fk_tg_id: int, urls, count_urls, status) -> int:
         statement = (
@@ -78,6 +80,7 @@ class Repo:
             tg_id: int,
             amount_points: int,
             amount: int = None,
+            usd_amount: int = None,
             currency: str = None,
             status: bool = False,
             comment: str = 'topup',
@@ -86,6 +89,7 @@ class Repo:
             order_id=order_id,
             fk_tg_id=tg_id,
             amount_points=amount_points,
+            usd_amount=usd_amount,
             amount=amount,
             currency=currency,
             status=status,
@@ -128,13 +132,21 @@ class Repo:
         one_month_ago = now - datetime.timedelta(weeks=4)
 
         transaction_statement = select(
-            coalesce(func.sum(case((Transaction.created_at > one_day_ago, Transaction.amount), else_=0)), 0).label(
+            coalesce(func.sum(
+                case((Transaction.created_at > one_day_ago, Transaction.usd_amount),
+                     else_=0)), 0).label(
                 'day'),
-            coalesce(func.sum(case((Transaction.created_at > one_week_ago, Transaction.amount), else_=0)), 0).label(
+            coalesce(func.sum(
+                case((Transaction.created_at > one_week_ago, Transaction.usd_amount),
+                     else_=0)), 0).label(
                 'week'),
-            coalesce(func.sum(case((Transaction.created_at > two_weeks_ago, Transaction.amount), else_=0)), 0).label(
+            coalesce(func.sum(
+                case((Transaction.created_at > two_weeks_ago, Transaction.usd_amount),
+                     else_=0)), 0).label(
                 'two_weeks'),
-            coalesce(func.sum(case((Transaction.created_at > one_month_ago, Transaction.amount), else_=0)), 0).label(
+            coalesce(func.sum(
+                case((Transaction.created_at > one_month_ago, Transaction.usd_amount),
+                     else_=0)), 0).label(
                 'month')
         ).where(Transaction.comment == "topup")
 

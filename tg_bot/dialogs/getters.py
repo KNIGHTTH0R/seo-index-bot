@@ -10,10 +10,11 @@ if TYPE_CHECKING:
 
 
 async def profile_getter(repo: Repo, dialog_manager: DialogManager, i18n: "TranslatorRunner", **kwargs):
-    balance = await repo.get_balance(dialog_manager.event.from_user.id)
+    balance_coins, balance_usd = await repo.get_balance(dialog_manager.event.from_user.id)
+
     username = dialog_manager.event.from_user.username
     return {
-        "profile-text": i18n.profile(username=username, balance=balance),
+        "profile-text": i18n.profile(username=username, balance=balance_coins)
     }
 
 
@@ -43,7 +44,7 @@ async def get_lang_setting(dialog_manager: DialogManager, **middleware_data):
 
 
 async def get_stats(dialog_manager: DialogManager, **middleware_data):
-    repo = dialog_manager.middleware_data.get("repo")
+    repo: Repo = dialog_manager.middleware_data.get("repo")
     day_stats, week_stats, two_weeks_stats, month_stats, users_count = await repo.get_stats()
     stats_dict = {
         "day_stats": day_stats,
