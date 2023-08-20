@@ -116,6 +116,10 @@ class NowPaymentsAPI:
         is specified.
         :param payout_extra_id: (optional) - extra id or memo or tag for external payout_address.
         :param fixed_rate: (optional) - boolean, can be true or false. Required for fixed-rate exchanges.
+
+        Parameters
+        ----------
+        is_fee_paid_by_user
         """
         payload = {
             "price_amount": price_amount,
