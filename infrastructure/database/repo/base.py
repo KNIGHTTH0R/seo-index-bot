@@ -1,6 +1,7 @@
 import datetime
-from typing import Optional
+from typing import Optional, Tuple, Any
 
+from pydantic.types import Decimal
 from sqlalchemy import select, func, update, Row, case, exists
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,16 +33,12 @@ class Repo:
         await self.session.commit()
         return result.first()
 
-    async def get_balance(self, tg_id: int) -> tuple[int, float]:
-        statement = select(func.coalesce(func.sum(Transaction.amount_points), 0),
-                           func.coalesce(func.sum(Transaction.usd_amount), 0)).where(
+    async def get_balance(self, tg_id: int) -> int | Row[Any]:
+        statement = select(func.coalesce(func.sum(Transaction.usd_amount), 0)).where(
             Transaction.fk_tg_id == tg_id, Transaction.status == True
         )
-        result = (await self.session.execute(statement)).fetchone()
-        # return result.scalar()
-        if not result:
-            return 0, 0
-        return result
+        result = (await self.session.execute(statement)).scalar()
+        return result or 0
 
     async def add_order(self, fk_tg_id: int, urls, count_urls, status) -> int:
         statement = (
@@ -78,9 +75,8 @@ class Repo:
             self,
             order_id: str,
             tg_id: int,
-            amount_points: int,
-            amount: int = None,
-            usd_amount: int = None,
+            amount: Decimal = None,
+            usd_amount: Decimal = None,
             currency: str = None,
             status: bool = False,
             comment: str = 'topup',
@@ -88,7 +84,6 @@ class Repo:
         statement = insert(Transaction).values(
             order_id=order_id,
             fk_tg_id=tg_id,
-            amount_points=amount_points,
             usd_amount=usd_amount,
             amount=amount,
             currency=currency,
