@@ -10,11 +10,11 @@ if TYPE_CHECKING:
 
 
 async def profile_getter(repo: Repo, dialog_manager: DialogManager, i18n: "TranslatorRunner", **kwargs):
-    balance_coins, balance_usd = await repo.get_balance(dialog_manager.event.from_user.id)
+    balance_usd = await repo.get_balance(dialog_manager.event.from_user.id)
 
     username = dialog_manager.event.from_user.username
     return {
-        "profile-text": i18n.profile(username=username, balance=balance_coins)
+        "profile-text": i18n.profile(username=username, balance=balance_usd)
     }
 
 
