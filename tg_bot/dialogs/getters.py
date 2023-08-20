@@ -30,7 +30,7 @@ async def get_order_text(
         dialog_manager: DialogManager, i18n: "TranslatorRunner", **kwargs
 ):
     count = dialog_manager.dialog_data.get("count_urls")
-    return {"pre-confirm-text": i18n.pre_confirm_text(count=count)}
+    return {"pre-confirm-text": i18n.pre_confirm_text(count=count, usdt_amount=count*0.20)}
 
 
 async def get_lang_setting(dialog_manager: DialogManager, **middleware_data):
