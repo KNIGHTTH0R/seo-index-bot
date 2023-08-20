@@ -15,7 +15,6 @@ class Transaction(Base, TimestampMixin):
     order_id: Mapped[Optional[str]] = mapped_column(String(128))
     amount: Mapped[Optional[float]] = mapped_column(DECIMAL(16, 4), nullable=True)
     usd_amount: Mapped[Optional[float]] = mapped_column(DECIMAL(10, 2), nullable=True)
-    amount_points: Mapped[int]
     currency: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     status: Mapped[Optional[bool]] = mapped_column(Boolean, server_default=false())
     comment: Mapped[str] = mapped_column(String(200))
