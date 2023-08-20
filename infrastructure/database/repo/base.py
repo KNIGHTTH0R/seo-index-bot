@@ -40,18 +40,18 @@ class Repo:
         result = (await self.session.execute(statement)).scalar()
         return result or 0
 
-    async def add_order(self, fk_tg_id: int, urls, count_urls, status) -> int:
+    async def add_order(self, fk_tg_id: int, urls, count_urls, status, usd_amount) -> int:
         statement = (
             insert(Order)
-            .values(fk_tg_id=fk_tg_id, urls=urls, count_urls=count_urls, status=status)
+            .values(fk_tg_id=fk_tg_id, urls=urls, count_urls=count_urls, status=status, usd_amount=usd_amount)
             .returning(Order.order_id)
         )
         result = await self.session.scalar(statement)
         await self.session.commit()
         return result
 
-    async def get_order_info(self, order_id: int) -> Row[tuple[int, str, int]]:
-        statement = select(Order.fk_tg_id, Order.urls, Order.count_urls).where(
+    async def get_order_info(self, order_id: int) -> Row[tuple[int, str, int, float]]:
+        statement = select(Order.fk_tg_id, Order.urls, Order.count_urls, Order.usd_amount).where(
             Order.order_id == order_id
         )
         result = await self.session.execute(statement)
@@ -64,9 +64,9 @@ class Repo:
         result = await self.session.execute(statement)
         return result.fetchone()
 
-    async def transaction_minus(self, tg_id: int, amount_points: int) -> None:
+    async def transaction_minus(self, tg_id: int, usd_amount: float) -> None:
         statement = insert(Transaction).values(
-            fk_tg_id=tg_id, amount_points=amount_points, status=True, comment='expense'
+            fk_tg_id=tg_id, usd_amount=usd_amount, status=True, comment='expense'
         )
         await self.session.scalars(statement)
         await self.session.commit()
