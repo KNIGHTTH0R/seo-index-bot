@@ -35,15 +35,13 @@ def generate_signature(merchant_key, data_str):
 
 
 def create_order(id_user, balance):
-    coins_per_dollar = 5
-    total_coins = balance * coins_per_dollar
     order_time = datetime.datetime.now().timestamp()
     order_date = int(order_time)
     order_id = (
-            f"{id_user}-{total_coins}-"
+            f"{id_user}-{balance}-"
             + hashlib.sha1(str(order_date).encode()).hexdigest()
     )
-    return order_id, total_coins
+    return order_id
 
 
 def type_factory_advanced(text: str):
