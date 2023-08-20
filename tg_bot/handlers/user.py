@@ -63,11 +63,11 @@ async def on_click_submit(
         return
     user_id, count_urls = response
 
-    await repo.transaction_minus(tg_id=user_id, amount_points=-count_urls)
+    await repo.transaction_minus(tg_id=user_id, usd_amount=-count_urls * 0.20)
     await repo.change_status(order_id=order_id, status="submit")
     await repo.session.commit()
 
-    await bot.send_message(chat_id=user_id, text=i18n.message_when_confirm_admin())
+    await bot.send_message(chat_id=user_id, text=i18n.message_confirm())
     await callback.message.delete_reply_markup()
 
 
@@ -89,4 +89,3 @@ async def go_to_deposit_balance(message: Message, dialog_manager: DialogManager)
 @user_router.message(TranslationFilter('button_settings'))
 async def go_to_settings(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(LanguageMenu.menu, mode=StartMode.RESET_STACK)
-
