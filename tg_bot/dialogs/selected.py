@@ -1,11 +1,11 @@
 import datetime
 import hashlib
 import logging
-import math
 import re
 from io import BytesIO
 from typing import TYPE_CHECKING, Any
 
+from _decimal import Decimal
 from aiogram import enums
 from aiogram.fsm.state import State
 from aiogram.types import (
@@ -17,8 +17,11 @@ from aiogram.types import (
 from aiogram.utils.markdown import hbold, hcode
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.input.text import ManagedTextInputAdapter, TextInput, T
+from aiogram_dialog.widgets.input.text import TextInput, T
 from aiogram_dialog.widgets.kbd import Button
+
+logger = logging.getLogger(__name__)
+log_level = logging.INFO
 
 from infrastructure.database.repo.base import Repo
 from infrastructure.nowpayments.api import NowPaymentsAPI
@@ -170,25 +173,30 @@ async def get_deposit_amount(
         await message.answer(i18n.not_digit())
         return
 
-    if int(message.text) < 10:
+    if int(message.text) < 7:
         await message.answer(i18n.min_deposit())
         return
 
-    dialog_manager.dialog_data.update(total_coins=message.text)
+    dialog_manager.dialog_data.update(usd_amount=float(message.text))
+    logger.info(f'Dollars: {message.text}')
+
     await dialog_manager.switch_to(Payment.available_method)
 
 
 def create_order_information(callback, dialog_manager: DialogManager):
-    total_coins = int(dialog_manager.dialog_data.get("total_coins"))
-    total_amount_usd = math.ceil(total_coins * 0.2)
+    total_amount_usd = dialog_manager.dialog_data.get("usd_amount")
+
     order_time = datetime.datetime.now().timestamp()
     order_date = int(order_time)
     order_id = (
-            f"{callback.from_user.id}-{total_coins}-"
+            f"{callback.from_user.id}-{total_amount_usd}-"
             + hashlib.sha1(str(order_date).encode()).hexdigest()
     )
+    logger.info(f'Total amount (USD): {total_amount_usd}')
+    logger.info(f'Order ID: {order_id}')
+    logger.info(f'Order date: {order_date}')
 
-    return total_coins, total_amount_usd, order_id, order_date
+    return total_amount_usd, order_id, order_date
 
 
 async def pay_wayforpay(
@@ -197,13 +205,14 @@ async def pay_wayforpay(
     i18n: "TranslatorRunner" = dialog_manager.middleware_data.get("i18n")
     repo: Repo = dialog_manager.middleware_data.get("repo")
 
-    total_coins, total_amount_usd, order_id, order_date = create_order_information(
+    total_amount_usd, order_id, order_date = create_order_information(
         callback, dialog_manager
     )
-    wayforpay: WayForPayAPI = dialog_manager.middleware_data.get("wayforpay")
 
+    wayforpay: WayForPayAPI = dialog_manager.middleware_data.get("wayforpay")
+    logger.info(f'Dollars: {total_amount_usd}')
     invoice = await wayforpay.create_invoice(
-        product_name=f"Поповнення балансу на суму {total_coins} монет.",
+        product_name=f"Поповнення балансу на суму {total_amount_usd} $.",
         product_price=total_amount_usd,
         product_count=1,
         currency="USD",
@@ -212,18 +221,21 @@ async def pay_wayforpay(
         last_name=callback.from_user.last_name,
         order_reference=order_id,
     )
+    logger.info(invoice)
+    logger.info(f'link: {invoice.invoiceUrl}')
+
 
     await repo.create_tx(
         order_id,
         callback.from_user.id,
         amount=total_amount_usd,
-        currency="USD",
-        amount_points=total_coins,
+        currency="USD"
     )
+    logger.info(f'link: {invoice.invoiceUrl}')
+    logger.info(f'ОГРОМНАЯ ССЫЛКА ПОСМОТРИТЕ: {invoice.invoiceUrl}')
     await callback.message.edit_text(
         i18n.pay_message(
             usd_amount=hbold(str(total_amount_usd)),
-            coins=hbold(str(total_coins)),
             link=invoice.invoiceUrl,
         ),
         reply_markup=InlineKeyboardMarkup(
@@ -264,10 +276,11 @@ async def pay_nowpayments(
 ):
     i18n: "TranslatorRunner" = dialog_manager.middleware_data.get("i18n")
     await callback.answer()
-    total_coins, total_amount_usd, order_id, order_date = create_order_information(
+    total_amount_usd, order_id, order_date = create_order_information(
         callback, dialog_manager
     )
-    if total_coins < 35:
+    logger.info(f'Total amount (USD): {total_amount_usd}')
+    if total_amount_usd < 7:
         await callback.message.answer(i18n.amount_less_35())
         await dialog_manager.switch_to(Payment.deposit_amount)
         return
@@ -287,7 +300,6 @@ async def pay_nowpayments(
         amount=crypto_amount.estimated_amount,
         usd_amount=total_amount_usd,
         currency=currency,
-        amount_points=total_coins,
     )
 
     payment = await generate_crypto_payment(
@@ -343,17 +355,14 @@ async def get_suma(
     username_match = r'^@\w+$'
     if re.match(id_match, info):
         id_user = int(info)
-        balance = float(dialog_manager.dialog_data.get("suma"))
+        balance = Decimal((dialog_manager.dialog_data.get("suma")))
         check_user = await repo.find_user_by_id(tg_id=id_user)
-
         if check_user:
-            balance = balance
-            current_balance_in_coins = await repo.get_balance(tg_id=id_user)
-            current_balance_in_dollars = current_balance_in_coins * 0.2  # conversion
+            current_balance_in_dollars = Decimal(await repo.get_balance(tg_id=id_user))  # conversion
             if balance < 0 and current_balance_in_dollars + balance < 0:
                 balance = -current_balance_in_dollars
-            order_id, total_coins = create_order(id_user, balance)
-            await repo.create_tx(order_id=order_id, tg_id=id_user, amount_points=total_coins, amount=balance,
+            order_id = create_order(id_user, balance)
+            await repo.create_tx(order_id=order_id, tg_id=id_user, amount=balance, usd_amount=balance,
                                  currency="USD", status=True, comment="admin")
             await message.answer("Баланс пользователя был успешно изменен")
             await dialog_manager.switch_to(AdminMenu.menu)
@@ -363,15 +372,14 @@ async def get_suma(
     elif re.match(username_match, info):
         username = dialog_manager.dialog_data.get("info")[1:]
         balance = dialog_manager.dialog_data.get("suma")
-        balance = float(balance)
+        balance = Decimal(balance)
         id_user = await repo.find_user(username=username)
         if id_user is not None:
-            current_balance_in_coins = await repo.get_balance(tg_id=id_user)
-            current_balance_in_dollars = current_balance_in_coins * 0.2  # conversion
+            current_balance_in_dollars = Decimal(await repo.get_balance(tg_id=id_user))
             if balance < 0 and current_balance_in_dollars + balance < 0:
                 balance = -current_balance_in_dollars
-            order_id, total_coins = create_order(id_user, balance)
-            await repo.create_tx(order_id=order_id, tg_id=id_user, amount_points=total_coins, amount=balance,
+            order_id = create_order(id_user, balance)
+            await repo.create_tx(order_id=order_id, tg_id=id_user, amount=balance, usd_amount=balance,
                                  currency="USD", status=True, comment="admin")
             await message.answer("Баланс пользователя был успешно изменен")
             await dialog_manager.switch_to(AdminMenu.menu)
