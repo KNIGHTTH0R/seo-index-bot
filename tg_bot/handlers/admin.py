@@ -1,6 +1,7 @@
 import html
 import re
 
+from _decimal import Decimal
 from aiogram import Router
 from aiogram.filters.command import Command
 from aiogram.types import Message
@@ -39,44 +40,36 @@ async def stats(message: Message, repo: Repo):
 @admin_router.message(Command("set_balance"))
 async def set_balance(message: Message, repo: Repo):
     id_match = re.fullmatch(r'/set_balance (\d+) ([+-]?\d+)', message.text)
-    username_match = re.fullmatch(r'/set_balance (\w+) ([+-]?\d+)', message.text)
+    username_match = re.fullmatch(r'/set_balance (@\w+) ([+-]?\d+)', message.text)
     if id_match:
         id_user, balance = map(int, id_match.groups())
+        balance = Decimal(balance)
         check_user = await repo.find_user_by_id(tg_id=id_user)
         if check_user:
-            balance = balance
-            current_balance_in_coins, balance_usd = await repo.get_balance(tg_id=id_user)
-
-            current_balance_in_dollars = current_balance_in_coins * 0.2  # conversion
+            current_balance_in_dollars = Decimal(await repo.get_balance(tg_id=id_user))
             if balance < 0 and current_balance_in_dollars + balance < 0:
                 balance = -current_balance_in_dollars
-            order_id, total_coins = create_order(id_user, balance)
+            order_id = create_order(id_user, balance)
             await repo.create_tx(order_id=order_id, tg_id=id_user,
-                                 amount_points=total_coins, amount=balance,
-                                 currency="USD", status=True, comment="admin")
+                                 amount=balance, currency="USD", status=True, comment="admin", usd_amount=balance)
             await message.answer("Баланс пользователя был успешно изменен")
         else:
             await message.answer("Юзера с таким айди не существует")
     elif username_match:
         username, balance = username_match.groups()
-        balance = float(balance)  # Преобразование balance в число
-        id_user = await repo.find_user(username=username)
+        balance = Decimal(balance)
+        id_user = await repo.find_user(username=username[1:])
         if id_user is not None:
-            current_balance_in_coins = await repo.get_balance(tg_id=id_user)
-            current_balance_in_dollars = current_balance_in_coins * 0.2  # conversion
+            current_balance_in_dollars = Decimal(await repo.get_balance(tg_id=id_user))
             if balance < 0 and current_balance_in_dollars + balance < 0:
                 balance = -current_balance_in_dollars
-            order_id, total_coins = create_order(id_user, balance)
+            order_id = create_order(id_user, balance)
             await repo.create_tx(order_id=order_id, tg_id=id_user,
-                                 amount_points=total_coins, amount=balance, usd_amount=balance,
-                                 currency="USD", status=True, comment="admin")
+                                 amount=balance, currency="USD", status=True, comment="admin", usd_amount=balance)
             await message.answer("Баланс пользователя был успешно изменен")
         else:
             await message.answer("Юзера с таким username не существует")
     else:
         await message.answer(
-            "Неправильная команда, используй: `/set_balance " + html.escape(
-                "<ID>") + " " + html.escape(
-                "<balance>") + "` или `/set_balance " + html.escape(
-                "<username>") + " " + html.escape(
-                "<balance>") + "`")
+            f"Неправильная команда, используй: `/set_balance <ID> <balance>` "
+            f"или `/set_balance <username> <balance>`")
