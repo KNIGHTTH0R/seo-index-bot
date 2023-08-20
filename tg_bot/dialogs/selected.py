@@ -71,7 +71,9 @@ async def get_links(
         str_links = "\n".join(list_urls)
         if count_extracted_url >= 10:
             dialog_manager.dialog_data.update(
-                count_urls=count_extracted_url, urls=str_links
+                count_urls=count_extracted_url,
+                urls=str_links,
+                suma_in_dollars=count_extracted_url * 0.20
             )
             await dialog_manager.switch_to(Order.confirm_url)
         else:
@@ -85,7 +87,8 @@ async def get_links(
         str_links = "\n".join(list_urls)
         if count_extracted_url >= 10:
             dialog_manager.dialog_data.update(
-                count_urls=count_extracted_url, urls=str_links
+                count_urls=count_extracted_url, urls=str_links,
+                suma_in_dollars=count_extracted_url * 0.20
             )
             await dialog_manager.switch_to(Order.confirm_url)
         else:
@@ -105,13 +108,14 @@ async def on_submit_order(
     tg_id = dialog_manager.event.from_user.id
     count_links = dialog_manager.dialog_data.get("count_urls")
     links = dialog_manager.dialog_data.get("urls")
+    usd_amount = dialog_manager.dialog_data.get("suma_in_dollars")
     balance = await repo.get_balance(tg_id=tg_id)
     if balance < count_links:
         await callback.answer(i18n.not_enough_balance(), show_alert=True)
     else:
         await callback.message.answer(i18n.on_cofrim())
         order_id = await repo.add_order(
-            count_urls=count_links, fk_tg_id=tg_id, urls=links, status="pending"
+            count_urls=count_links, fk_tg_id=tg_id, urls=links, status="pending", usd_amount=usd_amount
         )
         config = load_config(".env")
         admins = config.tg_bot.admin_ids
@@ -223,7 +227,6 @@ async def pay_wayforpay(
     )
     logger.info(invoice)
     logger.info(f'link: {invoice.invoiceUrl}')
-
 
     await repo.create_tx(
         order_id,
