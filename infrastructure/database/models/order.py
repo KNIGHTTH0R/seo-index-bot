@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy import Integer, ForeignKey, Text, BIGINT
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -11,5 +13,5 @@ class Order(Base, TimestampMixin):
     fk_tg_id: Mapped[int] = mapped_column(BIGINT, ForeignKey("users.tg_id"))
     urls: Mapped[str] = mapped_column(Text)
     count_urls: Mapped[int]
-    usd_amount: Mapped[float]
     status: Mapped[str]
+

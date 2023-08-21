@@ -52,14 +52,6 @@ class Repo:
         await self.session.commit()
         return result
 
-    async def get_order_info(self, order_id: int) -> Row[tuple[int, str, int, float]]:
-        statement = select(Order.fk_tg_id, Order.urls, Order.count_urls,
-                           Order.usd_amount).where(
-            Order.order_id == order_id
-        )
-        result = await self.session.execute(statement)
-        return result.fetchone()
-
     async def get_user_id_order(self, order_id: int) -> Row[tuple[int, int]]:
         statement = select(Order.fk_tg_id, Order.count_urls).where(
             Order.order_id == order_id
@@ -146,7 +138,7 @@ class Repo:
                 case((Transaction.created_at > one_month_ago, Transaction.usd_amount),
                      else_=0)), 0).label(
                 'month')
-        ).where(Transaction.comment == "topup")
+        ).where(Transaction.comment == "topup", Transaction.status == True)
 
         user_count_statement = select(coalesce(func.count(User.tg_id), 0))
 
