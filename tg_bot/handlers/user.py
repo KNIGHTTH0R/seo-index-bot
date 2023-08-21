@@ -64,7 +64,6 @@ async def on_click_submit(
         return
     user_id, count_urls = response
 
-    await repo.transaction_minus(tg_id=user_id, usd_amount=-count_urls * COINS_TO_USD_RATE)
     await repo.change_status(order_id=order_id, status="submit")
     await repo.session.commit()
 

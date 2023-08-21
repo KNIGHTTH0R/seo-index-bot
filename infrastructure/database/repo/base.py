@@ -40,12 +40,10 @@ class Repo:
         result = (await self.session.execute(statement)).scalar()
         return result or 0
 
-    async def add_order(self, fk_tg_id: int, urls, count_urls, status,
-                        usd_amount) -> int:
+    async def add_order(self, fk_tg_id: int, urls, count_urls, status) -> int:
         statement = (
             insert(Order)
-            .values(fk_tg_id=fk_tg_id, urls=urls, count_urls=count_urls, status=status,
-                    usd_amount=usd_amount)
+            .values(fk_tg_id=fk_tg_id, urls=urls, count_urls=count_urls, status=status)
             .returning(Order.order_id)
         )
         result = await self.session.scalar(statement)
@@ -59,10 +57,13 @@ class Repo:
         result = await self.session.execute(statement)
         return result.fetchone()
 
-    async def transaction_minus(self, tg_id: int, usd_amount: float) -> None:
+    async def transaction_minus(self, tg_id: int, usd_amount: float,
+                                order_id: str = None) -> None:
         statement = insert(Transaction).values(
             fk_tg_id=tg_id, usd_amount=usd_amount, status=True, comment='expense'
         )
+        if order_id:
+            statement = statement.values(order_id=order_id)
         await self.session.scalars(statement)
         await self.session.commit()
 
@@ -70,8 +71,8 @@ class Repo:
             self,
             order_id: str,
             tg_id: int,
+            usd_amount: Decimal,
             amount: Decimal = None,
-            usd_amount: Decimal = None,
             currency: str = None,
             status: bool = False,
             comment: str = 'topup',

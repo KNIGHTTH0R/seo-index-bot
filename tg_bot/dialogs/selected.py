@@ -119,8 +119,8 @@ async def on_submit_order(
     await callback.message.answer(i18n.on_cofrim())
     order_id = await repo.add_order(
         count_urls=count_links, fk_tg_id=tg_id, urls=links, status="pending",
-        usd_amount=usd_amount
     )
+    await repo.transaction_minus(tg_id=tg_id, usd_amount=-count_links * COINS_TO_USD_RATE, order_id=str(order_id))
     config = load_config(".env")
     admins = config.tg_bot.admin_ids
     for i in admins:
@@ -236,6 +236,7 @@ async def pay_wayforpay(
         order_id,
         callback.from_user.id,
         amount=total_amount_usd,
+        usd_amount=total_amount_usd,
         currency="USD"
     )
     await callback.message.edit_text(
