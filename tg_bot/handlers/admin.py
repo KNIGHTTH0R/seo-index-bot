@@ -1,7 +1,7 @@
 from _decimal import Decimal
-from aiogram import Router, F
+from aiogram import Router, F, flags
 from aiogram.filters.command import Command
-from aiogram.types import Message
+from aiogram.types import Message, BotCommandScopeChat
 from aiogram_dialog import DialogManager
 
 from infrastructure.database.repo.base import Repo
@@ -14,6 +14,15 @@ admin_router.message.filter(IsAdminFilter())
 
 
 @admin_router.message(Command("admin"))
+@flags.command_description(
+    scopes=[
+        BotCommandScopeChat(chat_id=chat_id)
+        for chat_id in [362089194,292235412]
+    ],
+    en="Admin menu",
+    uk="Меню адміністратора",
+    ru="Меню администратора",
+)
 async def admin_start(message: Message, dialog_manager: DialogManager):
     await message.reply("Приветствую, администратор")
     await dialog_manager.start(AdminMenu.menu)

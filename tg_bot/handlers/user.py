@@ -3,14 +3,13 @@ from typing import TYPE_CHECKING
 from aiogram import Bot, flags
 from aiogram import Router, types
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, BotCommandScopeAllPrivateChats
+from aiogram.types import Message, BotCommandScopeAllPrivateChats, BotCommandScopeChat
 from aiogram_dialog import DialogManager, StartMode
 
 from infrastructure.database.repo.base import Repo
 from tg_bot.dialogs.states import BotMenu, Order, Payment, LanguageMenu
 from tg_bot.filters.translation import TranslationFilter
 from tg_bot.keyboards.inline import main_user_menu
-from tg_bot.misc.constants import COINS_TO_USD_RATE
 from tg_bot.utils.utils import OrderIdFactory
 
 if TYPE_CHECKING:
@@ -23,6 +22,10 @@ user_router = Router()
 @flags.command_description(
     scopes=[
         BotCommandScopeAllPrivateChats(),
+        *[
+            BotCommandScopeChat(chat_id=chat_id)
+            for chat_id in [362089194, 292235412]
+        ]
     ],
     en="Start menu (text)",
     uk="Стартове меню (текст)",
@@ -37,6 +40,10 @@ async def user_start(message: Message, i18n: "TranslatorRunner"):
 @flags.command_description(
     scopes=[
         BotCommandScopeAllPrivateChats(),
+        *[
+            BotCommandScopeChat(chat_id=chat_id)
+            for chat_id in [362089194, 292235412]
+        ]
     ],
     en="Start menu (inline)",
     uk="Стартове меню (інлайн)",
