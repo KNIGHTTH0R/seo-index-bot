@@ -1,0 +1,1 @@
+COINS_TO_USD_RATE = 0.20

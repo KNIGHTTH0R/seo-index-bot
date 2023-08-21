@@ -10,6 +10,7 @@ from infrastructure.database.repo.base import Repo
 from tg_bot.dialogs.states import BotMenu, Order, Payment, LanguageMenu
 from tg_bot.filters.translation import TranslationFilter
 from tg_bot.keyboards.inline import main_user_menu
+from tg_bot.misc.constants import COINS_TO_USD_RATE
 from tg_bot.utils.utils import OrderIdFactory
 
 if TYPE_CHECKING:
@@ -63,7 +64,7 @@ async def on_click_submit(
         return
     user_id, count_urls = response
 
-    await repo.transaction_minus(tg_id=user_id, usd_amount=-count_urls * 0.20)
+    await repo.transaction_minus(tg_id=user_id, usd_amount=-count_urls * COINS_TO_USD_RATE)
     await repo.change_status(order_id=order_id, status="submit")
     await repo.session.commit()
 

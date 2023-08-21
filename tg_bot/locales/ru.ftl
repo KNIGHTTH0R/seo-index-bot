@@ -89,9 +89,7 @@ pay_message_crypto =
 
 amount_less_35 = Сумма не может быть меньше 7 доларов для оплаты криптовалютой
 
-success_payment = Спасибо за оплату! Ваши деньги {$tx.tokens_num} зачислены в ваш аккаунт!
-
-confirmed_by_payment = Ваш платеж подтвержден. На ваш счет добавлено {$tx.amount} $
+confirmed_by_payment = Ваш платеж подтвержден. На ваш счет добавлено {$amount} $
 
 
 min_deposit = Сумма не может быть меньше 7$

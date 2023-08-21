@@ -11,6 +11,8 @@ import fastapi
 from aiogram import Bot
 from fastapi import FastAPI
 from fastapi import HTTPException
+from fluent_compiler.bundle import FluentBundle
+from fluentogram import TranslatorHub, FluentTranslator
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from starlette.requests import Request
@@ -20,6 +22,7 @@ from infrastructure.database.repo.base import Repo
 from infrastructure.nowpayments.types import PaymentStatus, PaymentUpdate
 from infrastructure.webhook.types import WayforpayRequestData
 from tg_bot.config_reader import load_config, Config
+
 if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
 
@@ -32,6 +35,28 @@ config: Config = load_config()
 engine = create_async_engine(config.db.construct_sqlalchemy_url(), echo=True)
 session_maker = async_sessionmaker(engine, expire_on_commit=False)
 bot = Bot(token=config.tg_bot.token)
+t_hub = TranslatorHub(
+    {
+        "uk": ("uk", "ru"),
+        "ru": ("ru",),
+    },
+    translators=[
+        FluentTranslator(
+            locale=language_code,
+            translator=FluentBundle.from_files(
+                language_code,
+                [f"tg_bot/locales/{language_code}.ftl"],
+                use_isolating=False,
+            ),
+            separator="-",
+        )
+        for language_code in (
+            "uk",
+            "ru",
+        )
+    ],
+    root_locale="ru",
+)
 
 
 def check_signature_crypto(token: str, body: str, signature: str) -> bool:
@@ -49,15 +74,15 @@ def check_signature_wayforpay(response):
         [
             str(response.get(key))
             for key in [
-                "merchantAccount",
-                "orderReference",
-                "amount",
-                "currency",
-                "authCode",
-                "cardPan",
-                "transactionStatus",
-                "reasonCode",
-            ]
+            "merchantAccount",
+            "orderReference",
+            "amount",
+            "currency",
+            "authCode",
+            "cardPan",
+            "transactionStatus",
+            "reasonCode",
+        ]
         ]
     )
     signature = generate_signature_old(config.wayforpay.merchant_secret_key, sign)
@@ -68,8 +93,7 @@ def check_signature_wayforpay(response):
     return result
 
 
-async def update_payment_status_and_send_message(order_id: str, session, i18n: "TranslatorRunner"):
-    repo = Repo(session)
+async def update_payment_status_and_send_message(order_id: str, repo: Repo):
     tx = await repo.get_tx(order_id)
     if not tx:
         return JSONResponse(status_code=400, content={"error": "Transaction not found"})
@@ -79,10 +103,13 @@ async def update_payment_status_and_send_message(order_id: str, session, i18n: "
         )
     await repo.update_tx_paid(order_id)
 
+    user = await repo.get_user(tx.fk_tg_id)
+    i18n: TranslatorRunner = t_hub.get_translator_by_locale(user.language)
+
     await bot.send_message(
         tx.fk_tg_id,
         # Add Translations
-        text=i18n.confirmed_by_payment()
+        text=i18n.confirmed_by_payment(amount=tx.usd_amount),
     )
 
 
@@ -121,9 +148,10 @@ async def wayforpay_webhook_endpoint(request: fastapi.Request):
         ),
     )
     logging.info(f"Response signature: {response_signature}, {received_signature}")
-    if data.transactionStatus == "Approved":
+    if data.transactionStatus == "Approved" or config.tg_bot.debug_mode:
         async with session_maker() as session:
-            await update_payment_status_and_send_message(data.orderReference, session)
+            repo = Repo(session)
+            await update_payment_status_and_send_message(data.orderReference, repo)
 
     response_data = {
         "orderReference": data.orderReference,
@@ -166,11 +194,12 @@ async def nowpayments_route(request: Request):
     log.info(f"Status is {payment_update.payment_status}")
 
     if payment_update.payment_status == PaymentStatus.FINISHED or (
-        payment_update.payment_status
-        in (PaymentStatus.CONFIRMED, PaymentStatus.SENDING)
-        and payment_update.actually_paid >= payment_update.pay_amount
+            payment_update.payment_status
+            in (PaymentStatus.CONFIRMED, PaymentStatus.SENDING)
+            and payment_update.actually_paid >= payment_update.pay_amount
     ):
         async with session_maker() as session:
+            repo = Repo(session)
             await update_payment_status_and_send_message(
-                payment_update.order_id, session
+                payment_update.order_id, repo
             )

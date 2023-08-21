@@ -1,8 +1,5 @@
-import html
-import re
-
 from _decimal import Decimal
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.filters.command import Command
 from aiogram.types import Message
 from aiogram_dialog import DialogManager
@@ -26,7 +23,7 @@ async def admin_start(message: Message, dialog_manager: DialogManager):
 async def stats(message: Message, repo: Repo):
     day_stats, week_stats, two_weeks_stats, month_stats, users_count = await repo.get_stats()
     text = f"""<b>
-Статистика:
+Статистика пополнений:
 - 1 день: {day_stats} $
 - 1 неделя: {week_stats} $
 - 2 недели: {two_weeks_stats} $
@@ -37,39 +34,41 @@ async def stats(message: Message, repo: Repo):
     await message.answer(text)
 
 
-@admin_router.message(Command("set_balance"))
-async def set_balance(message: Message, repo: Repo):
-    id_match = re.fullmatch(r'/set_balance (\d+) ([+-]?\d+)', message.text)
-    username_match = re.fullmatch(r'/set_balance (@\w+) ([+-]?\d+)', message.text)
-    if id_match:
-        id_user, balance = map(int, id_match.groups())
-        balance = Decimal(balance)
-        check_user = await repo.find_user_by_id(tg_id=id_user)
-        if check_user:
-            current_balance_in_dollars = Decimal(await repo.get_balance(tg_id=id_user))
-            if balance < 0 and current_balance_in_dollars + balance < 0:
-                balance = -current_balance_in_dollars
-            order_id = create_order(id_user, balance)
-            await repo.create_tx(order_id=order_id, tg_id=id_user,
-                                 amount=balance, currency="USD", status=True, comment="admin", usd_amount=balance)
-            await message.answer("Баланс пользователя был успешно изменен")
-        else:
-            await message.answer("Юзера с таким айди не существует")
-    elif username_match:
-        username, balance = username_match.groups()
-        balance = Decimal(balance)
-        id_user = await repo.find_user(username=username[1:])
-        if id_user is not None:
-            current_balance_in_dollars = Decimal(await repo.get_balance(tg_id=id_user))
-            if balance < 0 and current_balance_in_dollars + balance < 0:
-                balance = -current_balance_in_dollars
-            order_id = create_order(id_user, balance)
-            await repo.create_tx(order_id=order_id, tg_id=id_user,
-                                 amount=balance, currency="USD", status=True, comment="admin", usd_amount=balance)
-            await message.answer("Баланс пользователя был успешно изменен")
-        else:
-            await message.answer("Юзера с таким username не существует")
+@admin_router.message(
+    F.text.regex(r'/set_balance (\d+) ([+-]?\d+)').group(1).cast(int).rename(
+        "user_input_amount"),
+    F.text.regex(r'/set_balance (\d+) ([+-]?\d+)').group(2).cast(int).rename("balance"),
+)
+@admin_router.message(
+    F.text.regex(r'/set_balance (\d+) ([+-]?\d+)').group(2).cast(int).rename(
+        "user_input_amount"),
+    F.text.regex(r'/set_balance @(\w+) ([+-]?\d+)').group(1).cast(str).rename(
+        "username"),
+)
+async def set_balance(message: Message, repo: Repo,
+                      id_user: int = None, user_input_amount: int = None,
+                      username: str = None
+                      ):
+    user_input_amount = Decimal(user_input_amount)
+
+    if id_user:
+        if not await repo.find_user_by_id(tg_id=id_user):
+            id_user = None
+    elif username:
+        id_user = await repo.find_user(username=username)
     else:
         await message.answer(
             f"Неправильная команда, используй: `/set_balance <ID> <balance>` "
             f"или `/set_balance <username> <balance>`")
+
+    if not id_user:
+        await message.answer(f"Пользователь не найден")
+        return
+
+    current_balance_in_dollars = await repo.get_balance(tg_id=id_user)
+    if user_input_amount < 0 and abs(user_input_amount) > current_balance_in_dollars:
+        user_input_amount = -current_balance_in_dollars
+    order_id = create_order(id_user, user_input_amount)
+    await repo.create_tx(order_id=order_id, tg_id=id_user, amount=user_input_amount,
+                         usd_amount=user_input_amount,
+                         currency="USD", status=True, comment="admin")

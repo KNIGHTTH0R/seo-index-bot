@@ -4,6 +4,7 @@ from aiogram_dialog import DialogManager
 
 from infrastructure.database.models import User
 from infrastructure.database.repo.base import Repo
+from tg_bot.misc.constants import COINS_TO_USD_RATE
 
 if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
@@ -30,7 +31,7 @@ async def get_order_text(
         dialog_manager: DialogManager, i18n: "TranslatorRunner", **kwargs
 ):
     count = dialog_manager.dialog_data.get("count_urls")
-    return {"pre-confirm-text": i18n.pre_confirm_text(count=count, usdt_amount=count*0.20)}
+    return {"pre-confirm-text": i18n.pre_confirm_text(count=count, usdt_amount=count * COINS_TO_USD_RATE)}
 
 
 async def get_lang_setting(dialog_manager: DialogManager, **middleware_data):

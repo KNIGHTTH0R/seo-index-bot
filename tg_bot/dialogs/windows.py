@@ -174,7 +174,7 @@ def admin_menu():
             state=AdminMenu.menu
         ),
         Window(
-            Const("Введить id или username пользователя. Пример @sad"),
+            Const("Введите id или username пользователя. Пример @sad"),
             TextInput(
                 id="id_user",
                 on_success=to_suma_menu,

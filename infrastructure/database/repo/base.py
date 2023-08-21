@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional, Tuple, Any
+from typing import Optional, Any
 
 from pydantic.types import Decimal
 from sqlalchemy import select, func, update, Row, case, exists
@@ -40,10 +40,12 @@ class Repo:
         result = (await self.session.execute(statement)).scalar()
         return result or 0
 
-    async def add_order(self, fk_tg_id: int, urls, count_urls, status, usd_amount) -> int:
+    async def add_order(self, fk_tg_id: int, urls, count_urls, status,
+                        usd_amount) -> int:
         statement = (
             insert(Order)
-            .values(fk_tg_id=fk_tg_id, urls=urls, count_urls=count_urls, status=status, usd_amount=usd_amount)
+            .values(fk_tg_id=fk_tg_id, urls=urls, count_urls=count_urls, status=status,
+                    usd_amount=usd_amount)
             .returning(Order.order_id)
         )
         result = await self.session.scalar(statement)
@@ -51,7 +53,8 @@ class Repo:
         return result
 
     async def get_order_info(self, order_id: int) -> Row[tuple[int, str, int, float]]:
-        statement = select(Order.fk_tg_id, Order.urls, Order.count_urls, Order.usd_amount).where(
+        statement = select(Order.fk_tg_id, Order.urls, Order.count_urls,
+                           Order.usd_amount).where(
             Order.order_id == order_id
         )
         result = await self.session.execute(statement)
@@ -155,9 +158,14 @@ class Repo:
         return day_stats, week_stats, two_weeks_stats, month_stats, users_count
 
     async def find_user(self, username: str) -> Optional[int]:
-        statement = select(User.tg_id).where(User.username == username)
+        statement = select(User.tg_id).where(User.username.ilike(username))
         result = await self.session.execute(statement)
         return result.scalar()
+
+    async def get_user(self, tg_id: int) -> Optional[Row[Any]]:
+        statement = select(User).where(User.tg_id == tg_id)
+        result = await self.session.execute(statement)
+        return result.scalars().first()
 
     async def find_user_by_id(self, tg_id: int) -> bool:
         statement = select(exists().where(User.tg_id == tg_id))

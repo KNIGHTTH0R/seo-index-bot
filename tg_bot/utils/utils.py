@@ -34,11 +34,11 @@ def generate_signature(merchant_key, data_str):
     return hmac.new(merchant_key.encode(), data_str.encode(), hashlib.md5).hexdigest()
 
 
-def create_order(id_user, balance):
+def create_order(id_user, amount):
     order_time = datetime.datetime.now().timestamp()
     order_date = int(order_time)
     order_id = (
-            f"{id_user}-{balance}-"
+            f"{id_user}-{amount}-"
             + hashlib.sha1(str(order_date).encode()).hexdigest()
     )
     return order_id

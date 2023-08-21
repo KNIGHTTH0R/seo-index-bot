@@ -20,6 +20,8 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.input.text import TextInput, T
 from aiogram_dialog.widgets.kbd import Button
 
+from ..misc.constants import COINS_TO_USD_RATE
+
 logger = logging.getLogger(__name__)
 log_level = logging.INFO
 
@@ -73,7 +75,7 @@ async def get_links(
             dialog_manager.dialog_data.update(
                 count_urls=count_extracted_url,
                 urls=str_links,
-                suma_in_dollars=count_extracted_url * 0.20
+                suma_in_dollars=count_extracted_url * COINS_TO_USD_RATE
             )
             await dialog_manager.switch_to(Order.confirm_url)
         else:
@@ -88,7 +90,7 @@ async def get_links(
         if count_extracted_url >= 10:
             dialog_manager.dialog_data.update(
                 count_urls=count_extracted_url, urls=str_links,
-                suma_in_dollars=count_extracted_url * 0.20
+                suma_in_dollars=count_extracted_url * COINS_TO_USD_RATE
             )
             await dialog_manager.switch_to(Order.confirm_url)
         else:
@@ -103,29 +105,31 @@ async def on_submit_order(
         dialog_manager: DialogManager,
 ):
     i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
-    repo = dialog_manager.middleware_data.get("repo")
+    repo: Repo = dialog_manager.middleware_data.get("repo")
     bot = dialog_manager.middleware_data["bot"]
     tg_id = dialog_manager.event.from_user.id
     count_links = dialog_manager.dialog_data.get("count_urls")
     links = dialog_manager.dialog_data.get("urls")
     usd_amount = dialog_manager.dialog_data.get("suma_in_dollars")
     balance = await repo.get_balance(tg_id=tg_id)
-    if balance < count_links:
+    if balance < count_links * COINS_TO_USD_RATE:
         await callback.answer(i18n.not_enough_balance(), show_alert=True)
-    else:
-        await callback.message.answer(i18n.on_cofrim())
-        order_id = await repo.add_order(
-            count_urls=count_links, fk_tg_id=tg_id, urls=links, status="pending", usd_amount=usd_amount
+        return
+
+    await callback.message.answer(i18n.on_cofrim())
+    order_id = await repo.add_order(
+        count_urls=count_links, fk_tg_id=tg_id, urls=links, status="pending",
+        usd_amount=usd_amount
+    )
+    config = load_config(".env")
+    admins = config.tg_bot.admin_ids
+    for i in admins:
+        await bot.send_message(
+            chat_id=i,
+            text=f"ID замовлення: {order_id}\nID користувача: {dialog_manager.event.from_user.id}\nКількість посилань: {count_links}\nПосилання:\n{links}",
+            disable_web_page_preview=True,
+            reply_markup=button_confirm(order_id),
         )
-        config = load_config(".env")
-        admins = config.tg_bot.admin_ids
-        for i in admins:
-            await bot.send_message(
-                chat_id=i,
-                text=f"ID замовлення: {order_id}\nID користувача: {dialog_manager.event.from_user.id}\nКількість посилань: {count_links}\nПосилання:\n{links}",
-                disable_web_page_preview=True,
-                reply_markup=button_confirm(order_id),
-            )
 
 
 def set_language(switch_to: State):
@@ -216,8 +220,8 @@ async def pay_wayforpay(
     wayforpay: WayForPayAPI = dialog_manager.middleware_data.get("wayforpay")
     logger.info(f'Dollars: {total_amount_usd}')
     invoice = await wayforpay.create_invoice(
-        product_name=f"Поповнення балансу на суму {total_amount_usd} $.",
-        product_price=total_amount_usd,
+        product_name=f"Поповнення балансу на суму {total_amount_usd} $",
+        product_price=int(total_amount_usd),
         product_count=1,
         currency="USD",
         order_date=order_date,
@@ -234,8 +238,6 @@ async def pay_wayforpay(
         amount=total_amount_usd,
         currency="USD"
     )
-    logger.info(f'link: {invoice.invoiceUrl}')
-    logger.info(f'ОГРОМНАЯ ССЫЛКА ПОСМОТРИТЕ: {invoice.invoiceUrl}')
     await callback.message.edit_text(
         i18n.pay_message(
             usd_amount=hbold(str(total_amount_usd)),
@@ -339,8 +341,31 @@ async def to_suma_menu(
         dialog_manager: DialogManager,
         data: str
 ):
-    dialog_manager.dialog_data.update(info=message.text)
-    print(message.text)
+    repo: Repo = dialog_manager.middleware_data.get("repo")
+    id_match = r'^-?\d+$'
+    username_match = r'^@\w+$'
+    info = message.text
+
+    if re.match(id_match, info):
+        id_user = int(info)
+        check_user = await repo.find_user_by_id(tg_id=id_user)
+        if not check_user:
+            await message.answer("Юзера с таким айди не существует")
+            await dialog_manager.switch_to(AdminMenu.menu)
+            return
+    elif re.match(username_match, info):
+        username = info[1:]
+        id_user = await repo.find_user(username=username)
+
+        if not id_user:
+            await message.answer("Юзера с таким username не существует")
+            await dialog_manager.switch_to(AdminMenu.menu)
+            return
+    else:
+        await message.answer("Неправильный формат")
+        return
+
+    dialog_manager.dialog_data.update(user_id=id_user)
     await dialog_manager.switch_to(AdminMenu.suma)
 
 
@@ -350,46 +375,20 @@ async def get_suma(
         dialog_manager: DialogManager,
         data: T
 ):
-    dialog_manager.dialog_data.update(suma=int(message.text))
+    user_input_amount = Decimal(message.text)
     bot = dialog_manager.middleware_data.get("bot")
     repo = dialog_manager.middleware_data.get("repo")
-    info = dialog_manager.dialog_data.get("info")
-    id_match = r'^-?\d+$'
-    username_match = r'^@\w+$'
-    if re.match(id_match, info):
-        id_user = int(info)
-        balance = Decimal((dialog_manager.dialog_data.get("suma")))
-        check_user = await repo.find_user_by_id(tg_id=id_user)
-        if check_user:
-            current_balance_in_dollars = Decimal(await repo.get_balance(tg_id=id_user))  # conversion
-            if balance < 0 and current_balance_in_dollars + balance < 0:
-                balance = -current_balance_in_dollars
-            order_id = create_order(id_user, balance)
-            await repo.create_tx(order_id=order_id, tg_id=id_user, amount=balance, usd_amount=balance,
-                                 currency="USD", status=True, comment="admin")
-            await message.answer("Баланс пользователя был успешно изменен")
-            await dialog_manager.switch_to(AdminMenu.menu)
-        else:
-            await message.answer("Юзера с таким айди не существует")
-            await dialog_manager.switch_to(AdminMenu.menu)
-    elif re.match(username_match, info):
-        username = dialog_manager.dialog_data.get("info")[1:]
-        balance = dialog_manager.dialog_data.get("suma")
-        balance = Decimal(balance)
-        id_user = await repo.find_user(username=username)
-        if id_user is not None:
-            current_balance_in_dollars = Decimal(await repo.get_balance(tg_id=id_user))
-            if balance < 0 and current_balance_in_dollars + balance < 0:
-                balance = -current_balance_in_dollars
-            order_id = create_order(id_user, balance)
-            await repo.create_tx(order_id=order_id, tg_id=id_user, amount=balance, usd_amount=balance,
-                                 currency="USD", status=True, comment="admin")
-            await message.answer("Баланс пользователя был успешно изменен")
-            await dialog_manager.switch_to(AdminMenu.menu)
-        else:
-            await message.answer("Юзера с таким username не существует")
-            await dialog_manager.switch_to(AdminMenu.menu)
+    user_id = dialog_manager.dialog_data.get("user_id")
 
+    current_balance_in_dollars = await repo.get_balance(tg_id=user_id)
+    if user_input_amount < 0 and abs(user_input_amount) > current_balance_in_dollars:
+        user_input_amount = -current_balance_in_dollars
+    order_id = create_order(user_id, user_input_amount)
+    await repo.create_tx(order_id=order_id, tg_id=user_id, amount=user_input_amount,
+                         usd_amount=user_input_amount,
+                         currency="USD", status=True, comment="admin")
+    await message.answer("Баланс пользователя был успешно изменен")
+    await dialog_manager.switch_to(AdminMenu.menu)
 
 async def to_back_menu_admin(
         callback: CallbackQuery,
