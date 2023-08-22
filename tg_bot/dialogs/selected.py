@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import logging
 import re
+from contextlib import suppress
 from io import BytesIO
 from typing import TYPE_CHECKING, Any
 
@@ -90,7 +91,8 @@ async def get_links(
         if count_extracted_url >= 10:
             dialog_manager.dialog_data.update(
                 count_urls=count_extracted_url, urls=str_links,
-                suma_in_dollars=count_extracted_url * COINS_TO_USD_RATE
+                suma_in_dollars=count_extracted_url * COINS_TO_USD_RATE,
+                document_file_id=message.document.file_id
             )
             await dialog_manager.switch_to(Order.confirm_url)
         else:
@@ -111,6 +113,7 @@ async def on_submit_order(
     count_links = dialog_manager.dialog_data.get("count_urls")
     links = dialog_manager.dialog_data.get("urls")
     usd_amount = dialog_manager.dialog_data.get("suma_in_dollars")
+    document_file_id = dialog_manager.dialog_data.get("document_file_id")
     balance = await repo.get_balance(tg_id=tg_id)
     if balance < count_links * COINS_TO_USD_RATE:
         await callback.answer(i18n.not_enough_balance(), show_alert=True)
@@ -120,16 +123,27 @@ async def on_submit_order(
     order_id = await repo.add_order(
         count_urls=count_links, fk_tg_id=tg_id, urls=links, status="pending",
     )
-    await repo.transaction_minus(tg_id=tg_id, usd_amount=-count_links * COINS_TO_USD_RATE, order_id=str(order_id))
+    await repo.transaction_minus(tg_id=tg_id,
+                                 usd_amount=-count_links * COINS_TO_USD_RATE,
+                                 order_id=str(order_id))
     config = load_config(".env")
     admins = config.tg_bot.admin_ids
     for i in admins:
-        await bot.send_message(
-            chat_id=i,
-            text=f"ID замовлення: {order_id}\nID користувача: {dialog_manager.event.from_user.id}\nКількість посилань: {count_links}\nПосилання:\n{links}",
-            disable_web_page_preview=True,
-            reply_markup=button_confirm(order_id),
-        )
+        with suppress():
+            if not document_file_id:
+                await bot.send_message(
+                    chat_id=i,
+                    text=f"ID замовлення: {order_id}\nID користувача: {dialog_manager.event.from_user.id}\nКількість посилань: {count_links}\nПосилання:\n{links}",
+                    disable_web_page_preview=True,
+                    reply_markup=button_confirm(order_id),
+                )
+            else:
+                await  bot.send_document(
+                    chat_id=i,
+                    document=document_file_id,
+                    caption=f"ID замовлення: {order_id}\nID користувача: {dialog_manager.event.from_user.id}\nКількість посилань: {count_links}",
+                    reply_markup=button_confirm(order_id),
+                )
 
 
 def set_language(switch_to: State):
@@ -390,6 +404,7 @@ async def get_suma(
                          currency="USD", status=True, comment="admin")
     await message.answer("Баланс пользователя был успешно изменен")
     await dialog_manager.switch_to(AdminMenu.menu)
+
 
 async def to_back_menu_admin(
         callback: CallbackQuery,
