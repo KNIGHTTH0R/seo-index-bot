@@ -31,7 +31,7 @@ class TranslationMiddleware(BaseMiddleware):
                     "ru",
                 )
             ],
-            root_locale="ru",
+            root_locale="uk",
         )
 
     async def __call__(

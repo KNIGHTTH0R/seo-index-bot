@@ -7,19 +7,20 @@ from io import BytesIO
 from typing import TYPE_CHECKING, Any
 
 from _decimal import Decimal
-from aiogram import enums
+from aiogram import enums, Bot
 from aiogram.fsm.state import State
 from aiogram.types import (
     CallbackQuery,
     Message,
     InlineKeyboardMarkup,
-    InlineKeyboardButton,
+    InlineKeyboardButton, BufferedInputFile, InputFile,
 )
 from aiogram.utils.markdown import hbold, hcode
 from aiogram_dialog import DialogManager
+from aiogram_dialog.widgets.common import ManagedWidget
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.input.text import TextInput, T
-from aiogram_dialog.widgets.kbd import Button
+from aiogram_dialog.widgets.kbd import Button, Select
 
 from ..misc.constants import COINS_TO_USD_RATE
 
@@ -34,10 +35,11 @@ from ..keyboards.inline import main_user_menu
 if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
 
-from .states import BotMenu, LanguageMenu, AdminMenu
+from .states import BotMenu, LanguageMenu, AdminMenu, TierMenu
 from .states import Order, Payment
 from ..config_reader import load_config, Config
-from ..utils.utils import button_confirm, extract_links, create_order
+from ..utils.utils import button_confirm, extract_links, create_order, get_content_from_message, handle_order, \
+    send_documents_to_admin
 
 
 async def to_profile(
@@ -50,6 +52,12 @@ async def go_to_order(
         callback: CallbackQuery, button: Button, dialog_manager: DialogManager
 ):
     await dialog_manager.start(Order.get_url)
+
+
+async def go_to_tier(
+        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+):
+    await dialog_manager.start(TierMenu.menu)
 
 
 async def go_to_deposit_balance(
@@ -88,6 +96,8 @@ async def get_links(
         list_urls = extract_links(read_document)
         count_extracted_url = len(list_urls)
         str_links = "\n".join(list_urls)
+        logger.info(f"precount {count_extracted_url}")
+        print(count_extracted_url)
         if count_extracted_url >= 10:
             dialog_manager.dialog_data.update(
                 count_urls=count_extracted_url, urls=str_links,
@@ -118,14 +128,12 @@ async def on_submit_order(
     if round(balance, 1) < round(count_links * COINS_TO_USD_RATE, 1):
         await callback.answer(i18n.not_enough_balance(), show_alert=True)
         return
-
+    logger.info(-count_links * COINS_TO_USD_RATE)
     await callback.message.answer(i18n.on_cofrim())
     order_id = await repo.add_order(
         count_urls=count_links, fk_tg_id=tg_id, urls=links, status="pending",
     )
-    await repo.transaction_minus(tg_id=tg_id,
-                                 usd_amount=-count_links * COINS_TO_USD_RATE,
-                                 order_id=str(order_id))
+    await repo.transaction_minus(tg_id=tg_id, usd_amount=-count_links * COINS_TO_USD_RATE, order_id=str(order_id))
     config = load_config(".env")
     admins = config.tg_bot.admin_ids
     for i in admins:
@@ -420,3 +428,63 @@ async def to_stats(
         dialog_manager: DialogManager
 ):
     await dialog_manager.switch_to(AdminMenu.stats)
+
+
+async def to_confirm_tier(
+        callback: CallbackQuery,
+        managed: ManagedWidget[Select],
+        dialog_manager: DialogManager,
+        item_id: str
+):
+    repo: Repo = dialog_manager.middleware_data.get("repo")
+    balance = await repo.get_balance(tg_id=callback.from_user.id)
+    i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
+    quantity, price = item_id.split(" - ")
+    usd_amount = float(price[1:])
+    if balance >= usd_amount:
+        dialog_manager.dialog_data.update(package=item_id, quantity=quantity, price=usd_amount)
+        await dialog_manager.switch_to(TierMenu.confirm)
+    else:
+        await callback.message.answer(i18n.not_enough_balance())
+        await dialog_manager.done()
+        await dialog_manager.start(BotMenu.user_menu)
+
+
+async def decline(
+        callback: CallbackQuery,
+        button: Button,
+        dialog_manager: DialogManager,
+):
+    i18n: TranslatorRunner = dialog_manager.middleware_data.get("i18n")
+    await dialog_manager.done()
+    await callback.message.answer(i18n.decline())
+    await dialog_manager.start(BotMenu.user_menu)
+
+
+async def to_get_text(
+        callback: CallbackQuery,
+        button: Button,
+        dialog_manager: DialogManager,
+):
+    await dialog_manager.switch_to(TierMenu.get_links)
+
+
+async def get_urls(
+        message: Message,
+        mi: MessageInput,
+        dialog_manager: DialogManager,
+        **kwargs,
+):
+    repo: Repo = dialog_manager.middleware_data.get("repo")
+    bot: Bot = dialog_manager.middleware_data.get("bot")
+    i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
+    links, content = await get_content_from_message(message, bot)
+    if links:
+        order_id = await handle_order(message, dialog_manager, links, content=content)
+        await send_documents_to_admin(dialog_manager, order_id, content)
+        await dialog_manager.done()
+        await dialog_manager.start(BotMenu.user_menu)
+    else:
+        await dialog_manager.done()
+        await dialog_manager.start(BotMenu.user_menu)
+        await message.answer(i18n.undefined_type_document())

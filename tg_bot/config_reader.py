@@ -102,6 +102,7 @@ class RedisConfig:
 @dataclass
 class Config:
     tg_bot: TgBot
+    support_bot: TgBot
     db: DbConfig = None
     wayforpay: WayforpayConfig = None
     nowpayments: NowPaymentsConfig = None
@@ -115,6 +116,12 @@ def load_config(path: Optional[str] = None):
     return Config(
         tg_bot=TgBot(
             token=env.str("BOT_TOKEN"),
+            admin_ids=list(map(int, env.list("ADMINS"))),
+            use_redis=env.bool("USE_REDIS"),
+            debug_mode=env.bool("DEBUG_MODE", False),
+        ),
+        support_bot=TgBot(
+            token=env.str("SUPPORT_BOT_TOKEN"),
             admin_ids=list(map(int, env.list("ADMINS"))),
             use_redis=env.bool("USE_REDIS"),
             debug_mode=env.bool("DEBUG_MODE", False),
