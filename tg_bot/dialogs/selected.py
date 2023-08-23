@@ -115,7 +115,7 @@ async def on_submit_order(
     usd_amount = dialog_manager.dialog_data.get("suma_in_dollars")
     document_file_id = dialog_manager.dialog_data.get("document_file_id")
     balance = await repo.get_balance(tg_id=tg_id)
-    if balance < count_links * COINS_TO_USD_RATE:
+    if round(balance, 1) < round(count_links * COINS_TO_USD_RATE, 1):
         await callback.answer(i18n.not_enough_balance(), show_alert=True)
         return
 
