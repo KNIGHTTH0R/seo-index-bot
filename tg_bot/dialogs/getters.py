@@ -90,7 +90,7 @@ async def tier_info(dialog_manager: DialogManager, **kwargs):
     quantity = dialog_manager.dialog_data.get("quantity")
     price = dialog_manager.dialog_data.get("price")
     package = dialog_manager.dialog_data.get("package")
-    package_price_info = f"{package}, його ціна ${price}"
+    package_price_info = f"{package}, його ціна ${int(price)}"
     return {"balance": balance, "quantity": quantity, "price": price, "package": package_price_info}
 
 
