@@ -99,7 +99,7 @@ async def send_documents_to_admin(dialog_manager: DialogManager, order_id, conte
         with suppress():
             await bot_support.send_document(
                 chat_id=i,
-                document=BufferedInputFile(file=file_data, filename=f"{package}" + f"{ order_id}"),
+                document=BufferedInputFile(file=file_data, filename=f"{package}" + f"{ order_id}.txt"),
                 caption=f"""
 Поступило замовлення №{order_id}
 Пакет: {package}

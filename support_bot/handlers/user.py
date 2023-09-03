@@ -28,6 +28,9 @@ async def submit_admin(
 ):
     chat_id = c.from_user.id
     order_id = callback_data.id_order
+    if not (await repo.check_order_status(order_id) == "pending_tier"):
+        return await c.answer("Замовлення вже прийнято")
+
     await c.answer()
     await c.message.edit_caption(
         caption=c.message.caption
@@ -113,7 +116,9 @@ async def decline(
 
 
 async def report_not_sent(bot: Bot, chat_id: int):
-    await bot.send_message(chat_id, "Звіт не був відправлений.")
+    await bot.send_message(
+        chat_id, "Звіт не був відправлений! Переконайтеся, що ви завантажили файл!"
+    )
 
 
 @user_router.message(StateFilter(AdminMenu.send_file), F.document)
@@ -155,5 +160,5 @@ async def submitted_order(
 
 
 async def report_status_and_send(order_id: int, bot: Bot, chat_id: int, repo: Repo):
-    if await repo.check_order_status(order_id):
+    if (await repo.check_order_status(order_id)) == "wait_tier":
         await report_not_sent(bot, chat_id)

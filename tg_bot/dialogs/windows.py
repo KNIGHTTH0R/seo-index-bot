@@ -247,7 +247,7 @@ def tier_menu():
                     items="packages",
                     on_click=to_confirm_tier,
                 ),
-                width=3,
+                width=1,
             ),
             getter=get_packages,
             state=TierMenu.menu,

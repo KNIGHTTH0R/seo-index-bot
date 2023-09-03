@@ -127,7 +127,7 @@ class Repo:
         statement = select(Order.status).where(Order.order_id == order_id)
         result = await self.session.execute(statement)
         order_status = result.scalar_one()
-        return order_status == 'wait_tier'
+        return order_status
 
     async def get_stats(self):
         now = datetime.datetime.now()
