@@ -253,9 +253,9 @@ def tier_menu():
             state=TierMenu.menu,
         ),
         Window(
-            TranslatableFormat(i18n.buyed_packeg()),
+            TranslatableFormat(i18n.when_selected()),
             Button(TranslatableFormat(i18n.yes()), id="yes", on_click=to_get_text),
-            Button(TranslatableFormat(i18n.no()), id="no", on_click=decline),
+            Back(TranslatableFormat(i18n.no()), id="no"),
             state=TierMenu.confirm,
             getter=tier_info,
         ),

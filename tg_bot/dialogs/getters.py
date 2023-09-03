@@ -89,8 +89,7 @@ async def tier_info(dialog_manager: DialogManager, **kwargs):
     balance = float(await repo.get_balance(tg_id=tg_id))
     price = dialog_manager.dialog_data.get("price")
     package = dialog_manager.dialog_data.get("package")
-    package_price_info = f"{package}, його ціна ${int(price)}"
-    return {"balance": balance, "price": price, "package": package_price_info}
+    return {"balance": balance, "price": price, "package": package}
 
 
 async def package_info(dialog_manager: DialogManager, **kwargs):

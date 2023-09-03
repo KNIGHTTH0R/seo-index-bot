@@ -15,7 +15,7 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton, )
 from aiogram.utils.markdown import hbold, hcode
-from aiogram_dialog import DialogManager
+from aiogram_dialog import DialogManager, ShowMode
 from aiogram_dialog.widgets.common import ManagedWidget
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.input.text import TextInput, T
@@ -439,6 +439,7 @@ async def to_confirm_tier(
     balance = await repo.get_balance(tg_id=callback.from_user.id)
     i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
     tariff_price = PACKAGES.get(tariff_name)
+    dialog_manager.show_mode = ShowMode.SEND
     if balance >= tariff_price:
         dialog_manager.dialog_data.update(package=tariff_name, price=tariff_price)
         await dialog_manager.switch_to(TierMenu.confirm)

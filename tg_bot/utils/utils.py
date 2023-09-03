@@ -103,8 +103,7 @@ async def send_documents_to_admin(dialog_manager: DialogManager, order_id, conte
                 caption=f"""
 Поступило замовлення №{order_id}
 Пакет: {package}
-Посилання в файлі.
-                        """,
+Посилання в файлі.""",
                 reply_markup=button_confirm(order_id, text="Прийняти в роботу"),
             )
 
