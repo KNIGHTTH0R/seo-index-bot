@@ -440,7 +440,7 @@ async def to_confirm_tier(
     i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
     tariff_price = PACKAGES.get(tariff_name)
     if balance >= tariff_price:
-        dialog_manager.dialog_data.update(package=tariff_name,price=tariff_price)
+        dialog_manager.dialog_data.update(package=tariff_name, price=tariff_price)
         await dialog_manager.switch_to(TierMenu.confirm)
     else:
         await callback.message.answer(i18n.not_enough_balance())
