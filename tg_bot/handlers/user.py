@@ -7,7 +7,7 @@ from aiogram.types import Message, BotCommandScopeAllPrivateChats, BotCommandSco
 from aiogram_dialog import DialogManager, StartMode
 
 from infrastructure.database.repo.base import Repo
-from tg_bot.dialogs.states import BotMenu, Order, Payment, LanguageMenu
+from tg_bot.dialogs.states import BotMenu, Order, Payment, LanguageMenu, TierMenu
 from tg_bot.filters.translation import TranslationFilter
 from tg_bot.keyboards.inline import main_user_menu
 from tg_bot.utils.utils import OrderIdFactory
@@ -96,3 +96,8 @@ async def go_to_deposit_balance(message: Message, dialog_manager: DialogManager)
 @user_router.message(TranslationFilter('button_settings'))
 async def go_to_settings(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(LanguageMenu.menu, mode=StartMode.RESET_STACK)
+
+
+@user_router.message(TranslationFilter('button_tier'))
+async def go_to_settings(message: Message, dialog_manager: DialogManager):
+    await dialog_manager.start(TierMenu.menu, mode=StartMode.RESET_STACK)

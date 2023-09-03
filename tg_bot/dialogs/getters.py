@@ -56,3 +56,42 @@ async def get_stats(dialog_manager: DialogManager, **middleware_data):
     }
 
     return stats_dict
+
+
+async def get_user_balance(dialog_manager: DialogManager, **kwargs):
+    repo: Repo = dialog_manager.middleware_data.get("repo")
+    tg_id = dialog_manager.event.from_user.id
+    balance = float(await repo.get_balance(tg_id=tg_id))
+    count_urls = balance / 0.20
+    return {"balance": balance,
+            "count_urls": count_urls}
+
+
+async def get_packages(**kwargs):
+    packages = [
+        "1k - $12",
+        "3k - $18",
+        "1k+3k - $20",
+        "5k - $24",
+        "10k - $30",
+        "3k+10k - $35",
+    ]
+    return {
+        "packages": packages,
+    }
+
+
+async def tier_info(dialog_manager: DialogManager, **kwargs):
+    repo: Repo = dialog_manager.middleware_data.get("repo")
+    tg_id = dialog_manager.event.from_user.id
+    balance = float(await repo.get_balance(tg_id=tg_id))
+    quantity = dialog_manager.dialog_data.get("quantity")
+    price = dialog_manager.dialog_data.get("price")
+    return {"balance": balance,
+            "quantity": quantity,
+            "price": price}
+
+
+async def package_info(dialog_manager: DialogManager, **kwargs):
+    quantity = dialog_manager.dialog_data.get("quantity")
+    return {"quantity": quantity}

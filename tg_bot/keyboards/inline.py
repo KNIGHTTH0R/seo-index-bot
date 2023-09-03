@@ -8,13 +8,15 @@ if TYPE_CHECKING:
 def main_user_menu(i18n: "TranslatorRunner") -> ReplyKeyboardMarkup:
     profile_button = KeyboardButton(text=i18n.button_profile())
     orders_button = KeyboardButton(text=i18n.button_order())
+    tier_button = KeyboardButton(text=i18n.button_tier())
     refill_balance_button = KeyboardButton(text=i18n.button_deposit())
     settings_button = KeyboardButton(text=i18n.button_settings())
 
     return ReplyKeyboardMarkup(
         keyboard=[
-            [profile_button, orders_button],
-            [refill_balance_button, settings_button],
+            [profile_button, refill_balance_button],
+            [orders_button, tier_button],
+            [settings_button]
         ],
         resize_keyboard=True,
     )

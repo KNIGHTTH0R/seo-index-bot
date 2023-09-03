@@ -26,3 +26,9 @@ class AdminMenu(StatesGroup):
     id = State()
     suma = State()
     stats = State()
+
+
+class TierMenu(StatesGroup):
+    menu = State()
+    confirm = State()
+    get_links = State()
