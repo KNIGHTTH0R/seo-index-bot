@@ -13,8 +13,7 @@ from aiogram.types import (
     CallbackQuery,
     Message,
     InlineKeyboardMarkup,
-    InlineKeyboardButton, BufferedInputFile, InputFile,
-)
+    InlineKeyboardButton, )
 from aiogram.utils.markdown import hbold, hcode
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.common import ManagedWidget
@@ -22,7 +21,7 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.input.text import TextInput, T
 from aiogram_dialog.widgets.kbd import Button, Select
 
-from ..misc.constants import COINS_TO_USD_RATE
+from ..misc.constants import COINS_TO_USD_RATE, PACKAGES
 
 logger = logging.getLogger(__name__)
 log_level = logging.INFO
@@ -434,15 +433,14 @@ async def to_confirm_tier(
         callback: CallbackQuery,
         managed: ManagedWidget[Select],
         dialog_manager: DialogManager,
-        item_id: str
+        tariff_name: str
 ):
     repo: Repo = dialog_manager.middleware_data.get("repo")
     balance = await repo.get_balance(tg_id=callback.from_user.id)
     i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
-    quantity, price = item_id.split(" - ")
-    usd_amount = float(price[1:])
-    if balance >= usd_amount:
-        dialog_manager.dialog_data.update(package=item_id, quantity=quantity, price=usd_amount)
+    tariff_price = PACKAGES.get(tariff_name)
+    if balance >= tariff_price:
+        dialog_manager.dialog_data.update(package=tariff_name,price=tariff_price)
         await dialog_manager.switch_to(TierMenu.confirm)
     else:
         await callback.message.answer(i18n.not_enough_balance())
@@ -475,12 +473,11 @@ async def get_urls(
         dialog_manager: DialogManager,
         **kwargs,
 ):
-    repo: Repo = dialog_manager.middleware_data.get("repo")
     bot: Bot = dialog_manager.middleware_data.get("bot")
     i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
     links, content = await get_content_from_message(message, bot)
     if links:
-        order_id = await handle_order(message, dialog_manager, links, content=content)
+        order_id = await handle_order(message, dialog_manager, links)
         await send_documents_to_admin(dialog_manager, order_id, content)
         await dialog_manager.done()
         await dialog_manager.start(BotMenu.user_menu)

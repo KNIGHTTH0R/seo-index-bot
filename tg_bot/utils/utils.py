@@ -75,7 +75,7 @@ async def get_content_from_message(message: Message, bot: Bot):
     return links, content
 
 
-async def handle_order(message: Message, dialog_manager: DialogManager, links, content):
+async def handle_order(message: Message, dialog_manager: DialogManager, links):
     tg_id = message.from_user.id
     usd_amount = dialog_manager.dialog_data.get("price")
     repo = dialog_manager.middleware_data.get("repo")
@@ -93,16 +93,16 @@ async def send_documents_to_admin(dialog_manager: DialogManager, order_id, conte
     config = load_config(".env")
     bot_support = dialog_manager.middleware_data.get("bot_support")
     admins = config.tg_bot.admin_ids
-    quantity = dialog_manager.dialog_data.get("quantity")
+    package = dialog_manager.dialog_data.get("package")
     file_data = content.getvalue()
     for i in admins:
         with suppress():
             await bot_support.send_document(
                 chat_id=i,
-                document=BufferedInputFile(file=file_data, filename=f"{quantity}" + f"{ order_id}"),
+                document=BufferedInputFile(file=file_data, filename=f"{package}" + f"{ order_id}"),
                 caption=f"""
 Поступило замовлення №{order_id}
-Пакет: {quantity}
+Пакет: {package}
 Посилання в файлі.
                         """,
                 reply_markup=button_confirm(order_id, text="Прийняти в роботу"),
