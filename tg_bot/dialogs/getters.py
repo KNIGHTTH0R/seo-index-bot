@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING
 
 from aiogram_dialog import DialogManager
@@ -78,7 +79,7 @@ async def get_user_balance(dialog_manager: DialogManager, **kwargs):
 
 async def get_packages(**kwargs):
     return {
-        "packages": [(f"{name} - {price}$", name) for name, price in PACKAGES.items()]
+        "packages": [(f"{name} - {int(price)}$", name) for name, price in PACKAGES.items()]
     }
 
 
@@ -88,9 +89,15 @@ async def tier_info(dialog_manager: DialogManager, **kwargs):
     balance = float(await repo.get_balance(tg_id=tg_id))
     quantity = dialog_manager.dialog_data.get("quantity")
     price = dialog_manager.dialog_data.get("price")
-    return {"balance": balance, "quantity": quantity, "price": price}
+    package = dialog_manager.dialog_data.get("package")
+    package_price_info = f"{package}, його ціна ${price}"
+    logging.info(package_info)
+    return {"balance": balance, "quantity": quantity, "price": price, "package": package_price_info}
 
 
 async def package_info(dialog_manager: DialogManager, **kwargs):
     package = dialog_manager.dialog_data.get("package")
+    logging.info(f"package {package}")
     return {"package": package}
+
+
