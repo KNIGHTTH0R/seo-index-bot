@@ -243,7 +243,7 @@ def tier_menu():
                 Select(
                     Format("{item[0]}"),
                     id="s_packages",
-                    item_id_getter=operator.itemgetter("{item[1]}"),
+                    item_id_getter=operator.itemgetter(1),
                     items="packages",
                     on_click=to_confirm_tier,
                 ),
@@ -260,7 +260,7 @@ def tier_menu():
             getter=tier_info,
         ),
         Window(
-            TranslatableFormat(i18n.buyed_packeg()),
+            TranslatableFormat(i18n.send_info_tier()),
             MessageInput(
                 func=get_urls, content_types=[ContentType.TEXT, ContentType.DOCUMENT]
             ),
