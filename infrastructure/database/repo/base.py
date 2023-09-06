@@ -4,7 +4,7 @@ import logging
 from typing import Optional, Any
 
 from pydantic.types import Decimal
-from sqlalchemy import select, func, update, Row, case, exists
+from sqlalchemy import select, func, update, Row, case, exists, and_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.sql.functions import coalesce
@@ -178,5 +178,31 @@ class Repo:
         statement = select(exists().where(User.tg_id == tg_id))
         result = await self.session.execute(statement)
         return result.scalar()
+
+    async def get_referrals_count(self, tg_id: int) -> int:
+        statement = select(func.count(User.tg_id)).where(User.referrer_id == tg_id)
+        result = await self.session.execute(statement)
+        return result.scalar() or 0
+
+    async def get_referral(self, tg_id: int):
+        statement = select(User.referrer_id).where(User.tg_id == tg_id)
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
+
+    async def get_total_referral_amount(self, tg_id: int) -> int | Row[Any]:
+        statement = select(func.coalesce(func.sum(Transaction.usd_amount), 0)).where(
+            and_(
+                Transaction.fk_tg_id == tg_id,
+                Transaction.order_id == "referral"
+            )
+        )
+        result = await self.session.execute(statement)
+        return result.scalar() or 0
+
+    async def set_referrer_id(self, tg_id: int, referrer_id: int) -> None:
+        statement = update(User).values(referrer_id=referrer_id).where(User.tg_id == tg_id)
+        await self.session.execute(statement)
+        await self.session.commit()
+        return
 
 
