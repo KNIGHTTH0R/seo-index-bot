@@ -1,8 +1,10 @@
+import logging
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 from aiogram import Bot, flags
 from aiogram import Router, types
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import Message, BotCommandScopeAllPrivateChats, BotCommandScopeChat
 from aiogram_dialog import DialogManager, StartMode
 
@@ -10,12 +12,39 @@ from infrastructure.database.repo.base import Repo
 from tg_bot.dialogs.states import BotMenu, Order, Payment, LanguageMenu, TierMenu
 from tg_bot.filters.translation import TranslationFilter
 from tg_bot.keyboards.inline import main_user_menu
+from tg_bot.middlewares.repo import CheckUser
 from tg_bot.utils.utils import OrderIdFactory
-
 if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
 
 user_router = Router()
+
+
+@user_router.message(CommandStart(deep_link_encoded=True, deep_link=True))
+@flags.command_description(
+    scopes=[
+        BotCommandScopeAllPrivateChats(),
+        *[
+            BotCommandScopeChat(chat_id=chat_id)
+            for chat_id in [362089194, 292235412]
+        ]
+    ],
+    en="Start menu (text)",
+    uk="Стартове меню (текст)",
+    ru="Стартовое меню (текст)",)
+async def cmd_start(message: Message, user_info, command: CommandObject, repo: Repo, i18n: "TranslatorRunner"):
+    deep_link_args = command.args
+    parent_id = int(deep_link_args.split("-")[-1])
+    created_at = user_info.created_at
+    user_id = message.from_user.id
+    current_time = datetime.now() - created_at
+    logging.info(f"parent id {parent_id} user_id {user_id}")
+    if parent_id != user_id:
+        if current_time <= timedelta(minutes=1):
+            await repo.set_referrer_id(tg_id=user_id, referrer_id=parent_id)
+    await message.answer(i18n.hello(),
+                         reply_markup=main_user_menu(i18n))
+    return
 
 
 @user_router.message(CommandStart())
