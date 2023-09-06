@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import String, Integer, BIGINT
+from sqlalchemy import String, Integer, BIGINT, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from infrastructure.database.models.base import Base
@@ -13,3 +13,4 @@ class User(Base, TimestampMixin):
     username: Mapped[Optional[str]] = mapped_column(String(50))
     full_name: Mapped[str] = mapped_column(String(50))
     language: Mapped[str] = mapped_column(String(5), default="ua")
+    referrer_id: Mapped[int] = mapped_column(BIGINT, ForeignKey("users.tg_id"), nullable=True)
