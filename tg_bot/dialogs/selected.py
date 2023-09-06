@@ -14,6 +14,7 @@ from aiogram.types import (
     Message,
     InlineKeyboardMarkup,
     InlineKeyboardButton, )
+from aiogram.utils.deep_linking import create_start_link
 from aiogram.utils.markdown import hbold, hcode
 from aiogram_dialog import DialogManager, ShowMode
 from aiogram_dialog.widgets.common import ManagedWidget
@@ -79,7 +80,7 @@ async def get_links(
         list_urls = extract_links(user_text)
         count_extracted_url = len(list_urls)
         str_links = "\n".join(list_urls)
-        if count_extracted_url >= 10:
+        if count_extracted_url >= 1:
             dialog_manager.dialog_data.update(
                 count_urls=count_extracted_url,
                 urls=str_links,
@@ -87,7 +88,7 @@ async def get_links(
             )
             await dialog_manager.switch_to(Order.confirm_url)
         else:
-            await message.answer(i18n.less_than_10_links())
+            await message.answer(i18n.less_than_1_links())
     elif message.document:
         content = BytesIO()
         document = await bot.download(message.document, content)
@@ -97,7 +98,7 @@ async def get_links(
         str_links = "\n".join(list_urls)
         logger.info(f"precount {count_extracted_url}")
         print(count_extracted_url)
-        if count_extracted_url >= 10:
+        if count_extracted_url >= 1:
             dialog_manager.dialog_data.update(
                 count_urls=count_extracted_url, urls=str_links,
                 suma_in_dollars=count_extracted_url * COINS_TO_USD_RATE,
@@ -105,7 +106,7 @@ async def get_links(
             )
             await dialog_manager.switch_to(Order.confirm_url)
         else:
-            await message.answer(i18n.less_than_10_links())
+            await message.answer(i18n.less_than_1_links())
     else:
         await message.answer(i18n.undefined_type_document())
 
@@ -337,7 +338,8 @@ async def pay_nowpayments(
             crypto_amount=hcode(str(round(payment.pay_amount * 100000) / 100000)),
             address=hbold(str(payment.pay_address)),
             currency=hbold(str(payment.pay_currency).upper()),
-        ),
+        )
+        ,
     )
 
 
@@ -486,3 +488,19 @@ async def get_urls(
         await dialog_manager.done()
         await dialog_manager.start(BotMenu.user_menu)
         await message.answer(i18n.undefined_type_document())
+
+
+async def referral_system(
+        callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+):
+    i18n: "TranslatorRunner" = dialog_manager.middleware_data["i18n"]
+    bot: Bot = dialog_manager.middleware_data.get("bot")
+    repo: Repo = dialog_manager.middleware_data.get("repo")
+    user_id = callback.from_user.id
+    count_referrals = await repo.get_referrals_count(tg_id=user_id)
+    count_money = await repo.get_total_referral_amount(tg_id=user_id)
+    referral_link = await create_start_link(bot, payload=f"ref-{callback.from_user.id}", encode=True)
+    await bot.send_message(chat_id=user_id,
+                           text=i18n.ref(count_referrals=count_referrals,
+                                         count_money=count_money,
+                                         referral_link=referral_link))
