@@ -105,8 +105,8 @@ async def update_payment_status_and_send_message(order_id: str, repo: Repo):
 
     user = await repo.get_user(tx.fk_tg_id)
     i18n: TranslatorRunner = t_hub.get_translator_by_locale(user.language)
-    parent_user_id = int(await repo.get_referral(tg_id=tx.fk_tg_id))
-    if parent_user_id != tx.fk_tg_id :
+    parent_user_id = await repo.get_referral(tg_id=tx.fk_tg_id)
+    if parent_user_id:
         referral_amount = tx.usd_amount * 0.08
         await repo.create_tx(tg_id=parent_user_id,
                              order_id="referral",
