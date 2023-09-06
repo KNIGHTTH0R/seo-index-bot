@@ -22,6 +22,7 @@ from infrastructure.database.repo.base import Repo
 from infrastructure.nowpayments.types import PaymentStatus, PaymentUpdate
 from infrastructure.webhook.types import WayforpayRequestData
 from tg_bot.config_reader import load_config, Config
+from tg_bot.misc.constants import PERCENT
 
 if TYPE_CHECKING:
     from tg_bot.locales.stub import TranslatorRunner
@@ -107,7 +108,7 @@ async def update_payment_status_and_send_message(order_id: str, repo: Repo):
     i18n: TranslatorRunner = t_hub.get_translator_by_locale(user.language)
     parent_user_id = await repo.get_referral(tg_id=tx.fk_tg_id)
     if parent_user_id:
-        referral_amount = tx.usd_amount * 0.08
+        referral_amount = tx.usd_amount * PERCENT
         await repo.create_tx(tg_id=parent_user_id,
                              order_id="referral",
                              usd_amount=referral_amount,
