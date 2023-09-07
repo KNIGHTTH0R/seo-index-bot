@@ -1,15 +1,18 @@
+import asyncio
 import datetime
+import logging
 from typing import Optional, Any
 
 from pydantic.types import Decimal
-from sqlalchemy import select, func, update, Row, case, exists
+from sqlalchemy import select, func, update, Row, case, exists, and_
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.sql.functions import coalesce
 
 from infrastructure.database.models.order import Order
 from infrastructure.database.models.transactions import Transaction
 from infrastructure.database.models.users import User
+from tg_bot.config_reader import load_config
 
 
 class Repo:
@@ -40,7 +43,12 @@ class Repo:
         result = (await self.session.execute(statement)).scalar()
         return result or 0
 
-    async def add_order(self, fk_tg_id: int, urls, count_urls, status) -> int:
+    async def get_user_language(self, tg_id: int) -> str:
+        statement = select(User.language).where(User.tg_id == tg_id)
+        result = await self.session.execute(statement)
+        return result.scalar()
+
+    async def add_order(self, fk_tg_id: int, urls: str, count_urls: Optional[int], status: str) -> int:
         statement = (
             insert(Order)
             .values(fk_tg_id=fk_tg_id, urls=urls, count_urls=count_urls, status=status)
@@ -115,6 +123,12 @@ class Repo:
         await self.session.execute(statement)
         await self.session.commit()
 
+    async def check_order_status(self, order_id: int) -> bool:
+        statement = select(Order.status).where(Order.order_id == order_id)
+        result = await self.session.execute(statement)
+        order_status = result.scalar_one()
+        return order_status
+
     async def get_stats(self):
         now = datetime.datetime.now()
         one_day_ago = now - datetime.timedelta(days=1)
@@ -164,3 +178,31 @@ class Repo:
         statement = select(exists().where(User.tg_id == tg_id))
         result = await self.session.execute(statement)
         return result.scalar()
+
+    async def get_referrals_count(self, tg_id: int) -> int:
+        statement = select(func.count(User.tg_id)).where(User.referrer_id == tg_id)
+        result = await self.session.execute(statement)
+        return result.scalar() or 0
+
+    async def get_referral(self, tg_id: int):
+        statement = select(User.referrer_id).where(User.tg_id == tg_id)
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
+
+    async def get_total_referral_amount(self, tg_id: int) -> int | Row[Any]:
+        statement = select(func.coalesce(func.sum(Transaction.usd_amount), 0)).where(
+            and_(
+                Transaction.fk_tg_id == tg_id,
+                Transaction.order_id == "referral"
+            )
+        )
+        result = await self.session.execute(statement)
+        return result.scalar() or 0
+
+    async def set_referrer_id(self, tg_id: int, referrer_id: int) -> None:
+        statement = update(User).values(referrer_id=referrer_id).where(User.tg_id == tg_id)
+        await self.session.execute(statement)
+        await self.session.commit()
+        return
+
+

@@ -12,6 +12,6 @@ class Order(Base, TimestampMixin):
     order_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     fk_tg_id: Mapped[int] = mapped_column(BIGINT, ForeignKey("users.tg_id"))
     urls: Mapped[str] = mapped_column(Text)
-    count_urls: Mapped[int]
+    count_urls: Mapped[Optional[int]]
     status: Mapped[str]
 

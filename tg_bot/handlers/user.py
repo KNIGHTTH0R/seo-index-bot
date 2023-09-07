@@ -1,13 +1,14 @@
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
-from aiogram import Bot, flags
+from aiogram import Bot, flags, F
 from aiogram import Router, types
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, BotCommandScopeAllPrivateChats, BotCommandScopeChat
 from aiogram_dialog import DialogManager, StartMode
 
 from infrastructure.database.repo.base import Repo
-from tg_bot.dialogs.states import BotMenu, Order, Payment, LanguageMenu
+from tg_bot.dialogs.states import BotMenu, Order, Payment, LanguageMenu, TierMenu
 from tg_bot.filters.translation import TranslationFilter
 from tg_bot.keyboards.inline import main_user_menu
 from tg_bot.utils.utils import OrderIdFactory
@@ -18,32 +19,46 @@ if TYPE_CHECKING:
 user_router = Router()
 
 
+@user_router.message(
+    CommandStart(
+        deep_link_encoded=True,
+        deep_link=True,
+        magic=F.args.regexp(r"^ref-(\d+)$").group(1).as_("ref_id").cast(int),
+    )
+)
+async def cmd_start(
+    message: Message,
+    user_info,
+    repo: Repo,
+    i18n: "TranslatorRunner",
+    ref_id: int,
+):
+    user_id = message.from_user.id
+    if ref_id != user_id:
+        if datetime.now() - user_info.created_at <= timedelta(minutes=1):
+            await repo.set_referrer_id(tg_id=user_id, referrer_id=ref_id)
+    await message.answer(i18n.hello(), reply_markup=main_user_menu(i18n))
+
+
 @user_router.message(CommandStart())
 @flags.command_description(
     scopes=[
         BotCommandScopeAllPrivateChats(),
-        *[
-            BotCommandScopeChat(chat_id=chat_id)
-            for chat_id in [362089194, 292235412]
-        ]
+        *[BotCommandScopeChat(chat_id=chat_id) for chat_id in [362089194, 292235412]],
     ],
     en="Start menu (text)",
     uk="Стартове меню (текст)",
     ru="Стартовое меню (текст)",
 )
 async def user_start(message: Message, i18n: "TranslatorRunner"):
-    await message.answer(i18n.hello(),
-                         reply_markup=main_user_menu(i18n))
+    await message.answer(i18n.hello(), reply_markup=main_user_menu(i18n))
 
 
 @user_router.message(Command("menu"))
 @flags.command_description(
     scopes=[
         BotCommandScopeAllPrivateChats(),
-        *[
-            BotCommandScopeChat(chat_id=chat_id)
-            for chat_id in [362089194, 292235412]
-        ]
+        *[BotCommandScopeChat(chat_id=chat_id) for chat_id in [362089194, 292235412]],
     ],
     en="Start menu (inline)",
     uk="Стартове меню (інлайн)",
@@ -55,12 +70,12 @@ async def show_menu(message: Message, dialog_manager: DialogManager):
 
 @user_router.callback_query(OrderIdFactory.filter())
 async def on_click_submit(
-        callback: types.CallbackQuery,
-        callback_data: OrderIdFactory,
-        repo: Repo,
-        bot: Bot,
-        dialog_manager: DialogManager,
-        i18n: "TranslatorRunner",
+    callback: types.CallbackQuery,
+    callback_data: OrderIdFactory,
+    repo: Repo,
+    bot: Bot,
+    dialog_manager: DialogManager,
+    i18n: "TranslatorRunner",
 ):
     await callback.answer()
 
@@ -78,21 +93,26 @@ async def on_click_submit(
     await callback.message.delete_reply_markup()
 
 
-@user_router.message(TranslationFilter('button_order'))
+@user_router.message(TranslationFilter("button_order"))
 async def go_to_order(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(Order.get_url, mode=StartMode.RESET_STACK)
 
 
-@user_router.message(TranslationFilter('button_profile'))
+@user_router.message(TranslationFilter("button_profile"))
 async def go_to_profile(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(BotMenu.profile, mode=StartMode.RESET_STACK)
 
 
-@user_router.message(TranslationFilter('button_deposit'))
+@user_router.message(TranslationFilter("button_deposit"))
 async def go_to_deposit_balance(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(Payment.deposit_amount, mode=StartMode.RESET_STACK)
 
 
-@user_router.message(TranslationFilter('button_settings'))
+@user_router.message(TranslationFilter("button_settings"))
 async def go_to_settings(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(LanguageMenu.menu, mode=StartMode.RESET_STACK)
+
+
+@user_router.message(TranslationFilter("button_tier"))
+async def go_to_settings(message: Message, dialog_manager: DialogManager):
+    await dialog_manager.start(TierMenu.menu, mode=StartMode.RESET_STACK)

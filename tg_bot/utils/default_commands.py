@@ -20,7 +20,7 @@ def get_commands_from_routers(routers: list[Router]):
     scope_types = {}
 
     for command, description, language_code, scope in extract_command_descriptions(
-            routers
+        routers
     ):
         if isinstance(scope, BotCommandScopeChat):
             scope_key = f"{scope.type}:{scope.chat_id}"
