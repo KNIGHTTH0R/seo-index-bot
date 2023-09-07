@@ -16,7 +16,7 @@ order =
         Приклад:
         https://soundcloud.com
         https://www.youtube.com
-        1 url = 20 центів
+        1 url = ${$price}
 
         Ваш поточний баланс: {$balance}$
         Кількість посилань, які доступні для замовлення: {$count_urls}
@@ -60,7 +60,7 @@ button_settings = ⚙️ Налаштування
 
 message_order_not_found = Замовлення не знайдено
 
-suma_to_deposit = Введіть суму для поповнення. 1 посилання = $0.20
+suma_to_deposit = Введіть суму для поповнення. 1 посилання = ${$price}
 
 pre_confirm_text =
     Кількість посилань: { $count }

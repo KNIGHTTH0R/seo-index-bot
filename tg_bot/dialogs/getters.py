@@ -73,8 +73,8 @@ async def get_user_balance(dialog_manager: DialogManager, **kwargs):
     repo: Repo = dialog_manager.middleware_data.get("repo")
     tg_id = dialog_manager.event.from_user.id
     balance = float(await repo.get_balance(tg_id=tg_id))
-    count_urls = balance / 0.20
-    return {"balance": balance, "count_urls": count_urls}
+    count_urls = balance / COINS_TO_USD_RATE
+    return {"balance": balance, "count_urls": count_urls, "price": COINS_TO_USD_RATE}
 
 
 async def get_packages(**kwargs):
