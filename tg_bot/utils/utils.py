@@ -1,7 +1,6 @@
 import datetime
 import hashlib
 import hmac
-import logging
 import re
 from contextlib import suppress
 from io import BytesIO
@@ -11,7 +10,6 @@ from aiogram.filters.callback_data import CallbackData
 from aiogram.types import Message, BufferedInputFile
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram_dialog import DialogManager
-
 
 from tg_bot.config_reader import load_config
 
@@ -46,19 +44,18 @@ def create_order(id_user, amount):
     order_time = datetime.datetime.now().timestamp()
     order_date = int(order_time)
     order_id = (
-            f"{id_user}-{amount}-"
-            + hashlib.sha1(str(order_date).encode()).hexdigest()
+        f"{id_user}-{amount}-" + hashlib.sha1(str(order_date).encode()).hexdigest()
     )
     return order_id
 
 
 def type_factory_advanced(text: str):
-    id_pattern = r'^-?\d+$'
-    username_pattern = r'^@\w+$'
+    id_pattern = r"^-?\d+$"
+    username_pattern = r"^@\w+$"
     if re.fullmatch(id_pattern, text) or re.fullmatch(username_pattern, text):
         return text
     else:
-        raise ValueError('Input does not match any of the expected patterns.')
+        raise ValueError("Input does not match any of the expected patterns.")
 
 
 async def get_content_from_message(message: Message, bot: Bot):
@@ -84,7 +81,9 @@ async def handle_order(message: Message, dialog_manager: DialogManager, links):
     order_id = await repo.add_order(
         count_urls=None, fk_tg_id=tg_id, urls=links, status="pending_tier"
     )
-    await repo.transaction_minus(tg_id=tg_id, usd_amount=-usd_amount, order_id=str(order_id))
+    await repo.transaction_minus(
+        tg_id=tg_id, usd_amount=-usd_amount, order_id=str(order_id)
+    )
     await message.answer(i18n.when_send())
     return order_id
 
@@ -99,12 +98,12 @@ async def send_documents_to_admin(dialog_manager: DialogManager, order_id, conte
         with suppress():
             await bot_support.send_document(
                 chat_id=i,
-                document=BufferedInputFile(file=file_data, filename=f"{package}" + f"{ order_id}.txt"),
+                document=BufferedInputFile(
+                    file=file_data, filename=f"{package}" + f"{ order_id}.txt"
+                ),
                 caption=f"""
 Поступило замовлення №{order_id}
 Пакет: {package}
 Посилання в файлі.""",
                 reply_markup=button_confirm(order_id, text="Прийняти в роботу"),
             )
-
-

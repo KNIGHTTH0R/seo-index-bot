@@ -1,6 +1,7 @@
 from aiogram_dialog import Dialog
 
-from .windows import main_user_menu_window, order_links, language_menu_window, deposit, admin_menu, tier_menu
+from .windows import main_user_menu_window, order_links, language_menu_window, deposit, \
+    admin_menu, tier_menu
 
 
 def bot_menu_dialogs():

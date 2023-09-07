@@ -35,10 +35,10 @@ from .selected import (
     to_back_menu_admin,
     to_stats,
     to_confirm_tier,
-    decline,
     to_get_text,
     get_urls,
-    go_to_tier, referral_system,
+    go_to_tier,
+    referral_system,
 )
 from .states import BotMenu, Order, LanguageMenu, Payment, AdminMenu, TierMenu
 from ..utils.utils import type_factory_advanced
@@ -91,7 +91,11 @@ def main_user_menu_window():
         Window(
             Format("{profile-text}"),
             Back(TranslatableFormat(i18n.back_button())),
-            Button(TranslatableFormat(i18n.ref_button()), id="referal", on_click=referral_system),
+            Button(
+                TranslatableFormat(i18n.ref_button()),
+                id="referal",
+                on_click=referral_system,
+            ),
             getter=profile_getter,
             state=BotMenu.profile,
         ),

@@ -16,7 +16,7 @@ def main_user_menu(i18n: "TranslatorRunner") -> ReplyKeyboardMarkup:
         keyboard=[
             [profile_button, refill_balance_button],
             [orders_button, tier_button],
-            [settings_button]
+            [settings_button],
         ],
         resize_keyboard=True,
     )

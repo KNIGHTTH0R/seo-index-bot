@@ -15,10 +15,7 @@ admin_router.message.filter(IsAdminFilter())
 
 @admin_router.message(Command("admin"))
 @flags.command_description(
-    scopes=[
-        BotCommandScopeChat(chat_id=chat_id)
-        for chat_id in [362089194,292235412]
-    ],
+    scopes=[BotCommandScopeChat(chat_id=chat_id) for chat_id in [362089194, 292235412]],
     en="Admin menu",
     uk="Меню адміністратора",
     ru="Меню администратора",
@@ -30,7 +27,13 @@ async def admin_start(message: Message, dialog_manager: DialogManager):
 
 @admin_router.message(Command("stats"))
 async def stats(message: Message, repo: Repo):
-    day_stats, week_stats, two_weeks_stats, month_stats, users_count = await repo.get_stats()
+    (
+        day_stats,
+        week_stats,
+        two_weeks_stats,
+        month_stats,
+        users_count,
+    ) = await repo.get_stats()
     text = f"""<b>
 Статистика пополнений:
 - 1 день: {day_stats} $
@@ -44,20 +47,29 @@ async def stats(message: Message, repo: Repo):
 
 
 @admin_router.message(
-    F.text.regex(r'/set_balance (\d+) ([+-]?\d+)').group(1).cast(int).rename(
-        "user_input_amount"),
-    F.text.regex(r'/set_balance (\d+) ([+-]?\d+)').group(2).cast(int).rename("balance"),
+    F.text.regex(r"/set_balance (\d+) ([+-]?\d+)")
+    .group(1)
+    .cast(int)
+    .rename("user_input_amount"),
+    F.text.regex(r"/set_balance (\d+) ([+-]?\d+)").group(2).cast(int).rename("balance"),
 )
 @admin_router.message(
-    F.text.regex(r'/set_balance (\d+) ([+-]?\d+)').group(2).cast(int).rename(
-        "user_input_amount"),
-    F.text.regex(r'/set_balance @(\w+) ([+-]?\d+)').group(1).cast(str).rename(
-        "username"),
+    F.text.regex(r"/set_balance (\d+) ([+-]?\d+)")
+    .group(2)
+    .cast(int)
+    .rename("user_input_amount"),
+    F.text.regex(r"/set_balance @(\w+) ([+-]?\d+)")
+    .group(1)
+    .cast(str)
+    .rename("username"),
 )
-async def set_balance(message: Message, repo: Repo,
-                      id_user: int = None, user_input_amount: int = None,
-                      username: str = None
-                      ):
+async def set_balance(
+    message: Message,
+    repo: Repo,
+    id_user: int = None,
+    user_input_amount: int = None,
+    username: str = None,
+):
     user_input_amount = Decimal(user_input_amount)
 
     if id_user:
@@ -68,7 +80,8 @@ async def set_balance(message: Message, repo: Repo,
     else:
         await message.answer(
             f"Неправильная команда, используй: `/set_balance <ID> <balance>` "
-            f"или `/set_balance <username> <balance>`")
+            f"или `/set_balance <username> <balance>`"
+        )
 
     if not id_user:
         await message.answer(f"Пользователь не найден")
@@ -78,6 +91,12 @@ async def set_balance(message: Message, repo: Repo,
     if user_input_amount < 0 and abs(user_input_amount) > current_balance_in_dollars:
         user_input_amount = -current_balance_in_dollars
     order_id = create_order(id_user, user_input_amount)
-    await repo.create_tx(order_id=order_id, tg_id=id_user, amount=user_input_amount,
-                         usd_amount=user_input_amount,
-                         currency="USD", status=True, comment="admin")
+    await repo.create_tx(
+        order_id=order_id,
+        tg_id=id_user,
+        amount=user_input_amount,
+        usd_amount=user_input_amount,
+        currency="USD",
+        status=True,
+        comment="admin",
+    )

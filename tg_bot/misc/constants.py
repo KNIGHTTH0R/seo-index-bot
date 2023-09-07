@@ -19,4 +19,4 @@ PACKAGES = {
     "Накрутка DR": 100.0,
 }
 
-PERCENT = 0.08
+REFERRAL_PERCENT = 0.08

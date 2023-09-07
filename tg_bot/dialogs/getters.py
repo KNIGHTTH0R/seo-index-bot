@@ -79,7 +79,9 @@ async def get_user_balance(dialog_manager: DialogManager, **kwargs):
 
 async def get_packages(**kwargs):
     return {
-        "packages": [(f"{name} - {int(price)}$", name) for name, price in PACKAGES.items()]
+        "packages": [
+            (f"{name} - {int(price)}$", name) for name, price in PACKAGES.items()
+        ]
     }
 
 
@@ -96,5 +98,3 @@ async def package_info(dialog_manager: DialogManager, **kwargs):
     package = dialog_manager.dialog_data.get("package")
     logging.info(f"package {package}")
     return {"package": package}
-
-
