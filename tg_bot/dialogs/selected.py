@@ -513,3 +513,12 @@ async def referral_system(
             referral_link=referral_link,
         ),
     )
+
+async def mailing_start(
+    callback: CallbackQuery, button: Button, dialog_manager: DialogManager
+):
+    text = "Введите текст рассылки"
+    await callback.message.answer(text)
+    await dialog_manager.done()
+    state = dialog_manager.middleware_data.get("state")
+    await state.set_state("mailing")

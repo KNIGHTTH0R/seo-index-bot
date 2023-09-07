@@ -1,18 +1,15 @@
-import asyncio
 import datetime
-import logging
 from typing import Optional, Any
 
 from pydantic.types import Decimal
 from sqlalchemy import select, func, update, Row, case, exists, and_
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import coalesce
 
 from infrastructure.database.models.order import Order
 from infrastructure.database.models.transactions import Transaction
 from infrastructure.database.models.users import User
-from tg_bot.config_reader import load_config
 
 
 class Repo:
@@ -20,7 +17,7 @@ class Repo:
         self.session: AsyncSession = session
 
     async def check_user(
-            self, tg_id: int, username: Optional[str], full_name: str
+        self, tg_id: int, username: Optional[str], full_name: str
     ) -> User:
         statement = (
             insert(User)
@@ -48,7 +45,9 @@ class Repo:
         result = await self.session.execute(statement)
         return result.scalar()
 
-    async def add_order(self, fk_tg_id: int, urls: str, count_urls: Optional[int], status: str) -> int:
+    async def add_order(
+        self, fk_tg_id: int, urls: str, count_urls: Optional[int], status: str
+    ) -> int:
         statement = (
             insert(Order)
             .values(fk_tg_id=fk_tg_id, urls=urls, count_urls=count_urls, status=status)
@@ -65,10 +64,11 @@ class Repo:
         result = await self.session.execute(statement)
         return result.fetchone()
 
-    async def transaction_minus(self, tg_id: int, usd_amount: float,
-                                order_id: str = None) -> None:
+    async def transaction_minus(
+        self, tg_id: int, usd_amount: float, order_id: str = None
+    ) -> None:
         statement = insert(Transaction).values(
-            fk_tg_id=tg_id, usd_amount=usd_amount, status=True, comment='expense'
+            fk_tg_id=tg_id, usd_amount=usd_amount, status=True, comment="expense"
         )
         if order_id:
             statement = statement.values(order_id=order_id)
@@ -76,14 +76,14 @@ class Repo:
         await self.session.commit()
 
     async def create_tx(
-            self,
-            order_id: str,
-            tg_id: int,
-            usd_amount: Decimal,
-            amount: Decimal = None,
-            currency: str = None,
-            status: bool = False,
-            comment: str = 'topup',
+        self,
+        order_id: str,
+        tg_id: int,
+        usd_amount: Decimal,
+        amount: Decimal = None,
+        currency: str = None,
+        status: bool = False,
+        comment: str = "topup",
     ) -> None:
         statement = insert(Transaction).values(
             order_id=order_id,
@@ -137,22 +137,48 @@ class Repo:
         one_month_ago = now - datetime.timedelta(weeks=4)
 
         transaction_statement = select(
-            coalesce(func.sum(
-                case((Transaction.created_at > one_day_ago, Transaction.usd_amount),
-                     else_=0)), 0).label(
-                'day'),
-            coalesce(func.sum(
-                case((Transaction.created_at > one_week_ago, Transaction.usd_amount),
-                     else_=0)), 0).label(
-                'week'),
-            coalesce(func.sum(
-                case((Transaction.created_at > two_weeks_ago, Transaction.usd_amount),
-                     else_=0)), 0).label(
-                'two_weeks'),
-            coalesce(func.sum(
-                case((Transaction.created_at > one_month_ago, Transaction.usd_amount),
-                     else_=0)), 0).label(
-                'month')
+            coalesce(
+                func.sum(
+                    case(
+                        (Transaction.created_at > one_day_ago, Transaction.usd_amount),
+                        else_=0,
+                    )
+                ),
+                0,
+            ).label("day"),
+            coalesce(
+                func.sum(
+                    case(
+                        (Transaction.created_at > one_week_ago, Transaction.usd_amount),
+                        else_=0,
+                    )
+                ),
+                0,
+            ).label("week"),
+            coalesce(
+                func.sum(
+                    case(
+                        (
+                            Transaction.created_at > two_weeks_ago,
+                            Transaction.usd_amount,
+                        ),
+                        else_=0,
+                    )
+                ),
+                0,
+            ).label("two_weeks"),
+            coalesce(
+                func.sum(
+                    case(
+                        (
+                            Transaction.created_at > one_month_ago,
+                            Transaction.usd_amount,
+                        ),
+                        else_=0,
+                    )
+                ),
+                0,
+            ).label("month"),
         ).where(Transaction.comment == "topup", Transaction.status == True)
 
         user_count_statement = select(coalesce(func.count(User.tg_id), 0))
@@ -160,7 +186,12 @@ class Repo:
         transaction_result = await self.session.execute(transaction_statement)
         users_count_result = await self.session.execute(user_count_statement)
 
-        day_stats, week_stats, two_weeks_stats, month_stats = transaction_result.fetchone()
+        (
+            day_stats,
+            week_stats,
+            two_weeks_stats,
+            month_stats,
+        ) = transaction_result.fetchone()
         users_count = users_count_result.scalar_one()
         return day_stats, week_stats, two_weeks_stats, month_stats, users_count
 
@@ -189,20 +220,22 @@ class Repo:
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
 
+    async def get_all_users(self):
+        statement = select(User.tg_id)
+        result = await self.session.execute(statement)
+        return result.scalars().all()
+
     async def get_total_referral_amount(self, tg_id: int) -> int | Row[Any]:
         statement = select(func.coalesce(func.sum(Transaction.usd_amount), 0)).where(
-            and_(
-                Transaction.fk_tg_id == tg_id,
-                Transaction.order_id == "referral"
-            )
+            and_(Transaction.fk_tg_id == tg_id, Transaction.order_id == "referral")
         )
         result = await self.session.execute(statement)
         return result.scalar() or 0
 
     async def set_referrer_id(self, tg_id: int, referrer_id: int) -> None:
-        statement = update(User).values(referrer_id=referrer_id).where(User.tg_id == tg_id)
+        statement = (
+            update(User).values(referrer_id=referrer_id).where(User.tg_id == tg_id)
+        )
         await self.session.execute(statement)
         await self.session.commit()
         return
-
-

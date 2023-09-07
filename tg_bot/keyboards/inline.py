@@ -1,4 +1,5 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from typing_extensions import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -20,3 +21,10 @@ def main_user_menu(i18n: "TranslatorRunner") -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True,
     )
+
+
+def confirm_keyboard() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="Подтвердить", callback_data="confirm")
+    kb.button(text="Отменить", callback_data="cancel")
+    return kb.as_markup()

@@ -39,6 +39,7 @@ from .selected import (
     get_urls,
     go_to_tier,
     referral_system,
+    mailing_start,
 )
 from .states import BotMenu, Order, LanguageMenu, Payment, AdminMenu, TierMenu
 from ..utils.utils import type_factory_advanced
@@ -208,6 +209,7 @@ def admin_menu():
                 id="change_balance",
             ),
             Button(Const("Статистика"), on_click=to_stats, id="stats_menu"),
+            Button(Const("Рассылка"), id="mailing", on_click=mailing_start),
             state=AdminMenu.menu,
         ),
         Window(
