@@ -58,12 +58,28 @@ async def get_stats(dialog_manager: DialogManager, **middleware_data):
         month_stats,
         users_count,
     ) = await repo.get_stats()
+
+    top_referrers = await repo.get_top_referrers()
+    top_earnings = await repo.get_top_referrers_earnings()
+
+    top_referrers_text = "\n".join(
+        f'{rank} | <a href="tg://user?id={tg_id}">{fullname}</a> | {referrals}' for rank, tg_id, fullname, referrals in
+        top_referrers
+    )
+
+    top_earnings_text = "\n".join(
+        f'{rank} | <a href="tg://user?id={tg_id}">{fullname}</a> | {earnings}' for rank, tg_id, fullname, earnings in
+        top_earnings
+    )
+
     stats_dict = {
         "day_stats": day_stats,
         "week_stats": week_stats,
         "two_weeks_stats": two_weeks_stats,
         "month_stats": month_stats,
         "users_count": users_count,
+        "top_referrers": top_referrers_text,
+        "top_earnings": top_earnings_text,
     }
 
     return stats_dict

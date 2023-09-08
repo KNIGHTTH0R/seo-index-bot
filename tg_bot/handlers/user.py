@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from aiogram import Bot, flags, F
 from aiogram import Router, types
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import Message, BotCommandScopeAllPrivateChats, BotCommandScopeChat
 from aiogram_dialog import DialogManager, StartMode
 
@@ -23,7 +23,6 @@ user_router = Router()
     CommandStart(
         deep_link_encoded=True,
         deep_link=True,
-        magic=F.args.regexp(r"^ref-(\d+)$").group(1).as_("ref_id").cast(int),
     )
 )
 async def cmd_start(
@@ -31,13 +30,17 @@ async def cmd_start(
     user_info,
     repo: Repo,
     i18n: "TranslatorRunner",
-    ref_id: int,
+    command: CommandObject
 ):
+    deep_link_args = command.args
+    parent_id = int(deep_link_args.split("-")[-1])
     user_id = message.from_user.id
-    if ref_id != user_id:
+    if parent_id != user_id:
         if datetime.now() - user_info.created_at <= timedelta(minutes=1):
-            await repo.set_referrer_id(tg_id=user_id, referrer_id=ref_id)
-    await message.answer(i18n.hello(), reply_markup=main_user_menu(i18n))
+            await repo.set_referrer_id(tg_id=user_id, referrer_id=parent_id)
+    await message.answer(i18n.hello(),
+                         reply_markup=main_user_menu(i18n))
+    return
 
 
 @user_router.message(CommandStart())
