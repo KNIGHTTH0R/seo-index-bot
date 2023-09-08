@@ -233,7 +233,21 @@ def admin_menu():
         ),
         Window(
             Format(
-                "<b>Статистика:\nЗа 1 день: {day_stats}$\nЗа неделю: {week_stats}$\nЗа две недели: {two_weeks_stats}$\nЗа месяц: {month_stats}$\nВсего пользователей: {users_count}</b>"
+                """
+                   <b>Статистика:
+За 1 день: {day_stats}$
+За неделю: {week_stats}$
+За две недели: {two_weeks_stats}$
+За месяц: {month_stats}$
+Всего пользователей: {users_count}
+            
+Топ 10 рефералов:
+{top_referrers}
+            
+Топ 10 доходов:
+{top_earnings}
+                   </b>
+                   """
             ),
             Button(Const("Назад"), id="back_menu", on_click=to_back_menu_admin),
             getter=get_stats,
