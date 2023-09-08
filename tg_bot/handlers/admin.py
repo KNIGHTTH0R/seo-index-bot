@@ -31,23 +31,34 @@ async def admin_start(message: Message, dialog_manager: DialogManager):
 
 @admin_router.message(Command("stats"))
 async def stats(message: Message, repo: Repo):
-    (
-        day_stats,
-        week_stats,
-        two_weeks_stats,
-        month_stats,
-        users_count,
-    ) = await repo.get_stats()
-    text = f"""<b>
-Статистика пополнений:
-- 1 день: {day_stats} $
-- 1 неделя: {week_stats} $
-- 2 недели: {two_weeks_stats} $
-- 1 месяц: {month_stats} $
-- Всего пользователей: {users_count}
-</b>
-    """
+    day_stats, week_stats, two_weeks_stats, month_stats, users_count = await repo.get_stats()
+    top_referrers = await repo.get_top_referrers()
+    top_earnings = await repo.get_top_referrers_earnings()
+
+    main_text = f"""Статистика пополнений:
+1 день:    {day_stats} $
+1 неделя:  {week_stats} $
+2 недели:  {two_weeks_stats} $
+1 месяц:   {month_stats} $
+Всего пользователей: {users_count}
+"""
+
+    top_referrers_text = "Топ 10 рефералов:\nРанг | ID | Рефералов\n"
+    for rank, tg_id, fullname, referrals in top_referrers:
+        user_link = f'<a href="tg://user?id={tg_id}">{fullname}</a>'
+        top_referrers_text += f"{rank} | {user_link} | {referrals}\n"
+
+    top_earnings_text = "Топ 10 доходов:\nРанг | ID | Доход $\n"
+    for rank, tg_id, fullname, earnings in top_earnings:
+        user_link = f'<a href="tg://user?id={tg_id}">{fullname}</a>'
+        top_earnings_text += f"{rank} | {user_link} | {earnings}\n"
+
+    text = f"<b>{main_text}\n\n{top_referrers_text}\n\n{top_earnings_text}</b>"
+
     await message.answer(text)
+
+
+
 
 
 @admin_router.message(
@@ -68,11 +79,11 @@ async def stats(message: Message, repo: Repo):
     .rename("username"),
 )
 async def set_balance(
-    message: Message,
-    repo: Repo,
-    id_user: int = None,
-    user_input_amount: int = None,
-    username: str = None,
+        message: Message,
+        repo: Repo,
+        id_user: int = None,
+        user_input_amount: int = None,
+        username: str = None,
 ):
     user_input_amount = Decimal(user_input_amount)
 
@@ -113,7 +124,6 @@ async def cmd_mailing(message: Message, state: FSMContext):
     await state.set_state("mailing")
 
 
-
 @admin_router.message(StateFilter("mailing"))
 async def text_mailing(message: Message, state: FSMContext, repo: Repo):
     msg = await message.answer(message.html_text)
@@ -134,7 +144,8 @@ async def confirm_mailing(cq: CallbackQuery, state: FSMContext, repo: Repo, bot)
     await cq.message.edit_text("Рассылка успешно отправлена")
     await state.clear()
 
+
 @admin_router.callback_query(F.data == "cancel", StateFilter("confirm_mailing"))
-async def cancel_mailing(cq:CallbackQuery, state: FSMContext):
+async def cancel_mailing(cq: CallbackQuery, state: FSMContext):
     await cq.message.edit_text("Рассылка отменена")
     await state.clear()
