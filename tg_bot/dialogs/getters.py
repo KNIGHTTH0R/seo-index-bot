@@ -63,12 +63,12 @@ async def get_stats(dialog_manager: DialogManager, **middleware_data):
     top_earnings = await repo.get_top_referrers_earnings()
 
     top_referrers_text = "\n".join(
-        f'{rank} | <a href="tg://user?id={tg_id}">{fullname}</a> | {referrals}' for rank, tg_id, fullname, referrals in
-        top_referrers
+        f'{rank} | <a href="tg://user?id={tg_id}">ID: {tg_id} - {fullname}</a> | {referrals}' for rank, (tg_id, fullname, referrals) in
+        enumerate(top_referrers, start=1)
     )
 
     top_earnings_text = "\n".join(
-        f'{rank} | <a href="tg://user?id={tg_id}">{fullname}</a> | {earnings}' for rank, tg_id, fullname, earnings in
+        f'{rank} | <a href="tg://user?id={tg_id}">ID: {tg_id} - {fullname}</a>  | {earnings}' for rank, tg_id, fullname, earnings in
         top_earnings
     )
 

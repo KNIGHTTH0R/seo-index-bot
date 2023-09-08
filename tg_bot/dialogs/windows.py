@@ -233,8 +233,7 @@ def admin_menu():
         ),
         Window(
             Format(
-                """
-                   <b>Статистика:
+                """<b>Статистика:
 За 1 день: {day_stats}$
 За неделю: {week_stats}$
 За две недели: {two_weeks_stats}$
@@ -245,8 +244,7 @@ def admin_menu():
 {top_referrers}
             
 Топ 10 доходов:
-{top_earnings}
-                   </b>
+{top_earnings}</b>
                    """
             ),
             Button(Const("Назад"), id="back_menu", on_click=to_back_menu_admin),

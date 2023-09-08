@@ -2,7 +2,7 @@ import datetime
 from typing import Optional, Any, Sequence
 
 from pydantic.types import Decimal
-from sqlalchemy import select, func, update, Row, case, exists, and_, alias, over
+from sqlalchemy import select, func, update, Row, case, exists, and_, over, alias
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import coalesce
@@ -241,26 +241,15 @@ class Repo:
         return
 
     async def get_top_referrers(self) -> Sequence[Row[tuple[Any, Any, Any, Any]]]:
-        user_alias = alias(User.__table__)
+        user_alias = alias(User)
         statement = (
             select(
-                over(
-                    func.row_number(),
-                    order_by=func.count(user_alias.c.referrer_id).desc()
-                ).label("rank"),
-                user_alias.c.tg_id,
-                user_alias.c.full_name,
-                func.count(user_alias.c.referrer_id).label("referrals")
+                User.tg_id, User.full_name, func.count(User.tg_id).label("referrals")
             )
-            .select_from(user_alias)
-            .join(
-                User,
-                user_alias.c.tg_id == User.referrer_id,
-                isouter=True
-            )
-            .group_by(user_alias.c.tg_id)
-            .having(func.count(user_alias.c.referrer_id) > 0)  # Add this line
-            .order_by(func.count(user_alias.c.referrer_id).desc())
+            .select_from(User)
+            .join(user_alias, User.tg_id == user_alias.c.referrer_id, isouter=True)
+            .group_by(User.tg_id, User.full_name)
+            .order_by(func.count(User.tg_id).desc())
             .limit(10)
         )
         result = await self.session.execute(statement)
@@ -270,21 +259,15 @@ class Repo:
         statement = (
             select(
                 over(
-                    func.row_number(),
-                    order_by=func.sum(Transaction.usd_amount).desc()
+                    func.row_number(), order_by=func.sum(Transaction.usd_amount).desc()
                 ).label("rank"),
                 User.tg_id,
                 User.full_name,
-                func.sum(Transaction.usd_amount).label("earnings")
+                func.sum(Transaction.usd_amount).label("earnings"),
             )
             .select_from(User)
-            .join(
-                Transaction,
-                User.tg_id == Transaction.fk_tg_id
-            )
-            .filter(
-                Transaction.comment == "referral"
-            )
+            .join(Transaction, User.tg_id == Transaction.fk_tg_id)
+            .filter(Transaction.comment == "referral")
             .group_by(User.tg_id)
             .order_by(func.sum(Transaction.usd_amount).desc())
             .limit(10)
