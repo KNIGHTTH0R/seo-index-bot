@@ -114,8 +114,8 @@ class WayForPayAPI:
                     "payParts",
                 ]
             ),
-            "clientFirstName": first_name[:16],
-            "clientLastName": last_name[:32],
+            "clientFirstName": first_name[:16] if first_name else "",
+            "clientLastName": last_name[:32] if last_name else "",
         }
         logging.info(params)
         response = await _query(params)
